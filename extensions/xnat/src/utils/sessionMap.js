@@ -212,7 +212,7 @@ const sessionMap = {
    *
    * @returns {string} The view mode.
    */
-  getView: view => {
+  getView: () => {
     return _map.view;
   },
 

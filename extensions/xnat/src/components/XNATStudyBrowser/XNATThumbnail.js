@@ -42,7 +42,7 @@ function ThumbnailFooter({
 
   useEffect(() => {
     let unmounted = false;
-    if (hasRois) {
+    if (hasRois && imageId) {
       hasRois.then(response => {
         const SeriesInstanceUID = cornerstone.metaData.get(
           'SeriesInstanceUID',

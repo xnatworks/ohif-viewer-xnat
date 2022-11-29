@@ -6,6 +6,15 @@ const Component = React.lazy(() => {
   return import('./DicomMicroscopyViewport');
 });
 
+const OHIFDicomMicroscopyViewport = props => {
+  return (
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <Component {...props} />
+    </React.Suspense>
+  );
+};
+//return OHIFDicomMicroscopyViewport;
+
 export default {
   /**
    * Only required property. Should be a unique value across all extensions.

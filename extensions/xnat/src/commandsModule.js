@@ -74,6 +74,14 @@ const definitions = {
     options: { url: null },
     context: 'VIEWER',
   },
+  xnatGetRootUrl: {
+    commandFn: () => {
+      return sessionMap.xnatRootUrl;
+    },
+    storeContexts: [],
+    options: {},
+    context: 'VIEWER',
+  },
   xnatSetView: {
     commandFn: ({ view }) => {
       sessionMap.setView(view);

@@ -18,7 +18,7 @@ export default function initWebWorkers() {
   };
 
   if (!initialized) {
-    cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
+    // cornerstoneWADOImageLoader.webWorkerManager.initialize(config);
     initialized = true;
   }
 }

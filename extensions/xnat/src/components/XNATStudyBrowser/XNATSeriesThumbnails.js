@@ -32,10 +32,10 @@ const XNATSeriesThumbnails = props => {
 
   const { StudyInstanceUID } = study;
   return study.thumbnails
-    .filter(thumb => {
-      // Exclude non-displayable series
-      return thumb.imageId !== undefined;
-    })
+    // .filter(thumb => {
+    //   // Exclude non-displayable series
+    //   return thumb.imageId !== undefined;
+    // })
     .map((thumb, thumbIndex) => {
       // TODO: Thumb has more props than we care about?
       const {

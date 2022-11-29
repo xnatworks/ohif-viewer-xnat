@@ -295,10 +295,16 @@ class XNATStandaloneRouting extends Component {
           : 'XNAT OHIF Viewer';
         document.title = documentTitle;
 
+        // Additional supported modalities
+        const additionalModalities = ['SM'];
+
         // Remove series with no instances
         studies = studies.filter(study => {
           study.series = study.series.filter(series => {
-            return series.instances.length > 0;
+            return (
+              series.instances.length > 0 ||
+              additionalModalities.includes(series.Modality)
+            );
           });
           return study.series !== undefined;
         });
@@ -360,10 +366,20 @@ class XNATStandaloneRouting extends Component {
 const _mapStudiesToNewFormat = studies => {
   studyMetadataManager.purge();
 
+  // DICOMWeb supported modalities
+  const dicomWebModalities = ['SM'];
+  const rootUrl = commandsManager.runCommand('xnatGetRootUrl');
+
   /* Map studies to new format, update metadata manager? */
   const uniqueStudyUIDs = new Set();
   const updatedStudies = studies.map(study => {
     const studyMetadata = new OHIFStudyMetadata(study, study.StudyInstanceUID);
+
+    if (study.series && study.series.length > 0) {
+      if (dicomWebModalities.includes(study.series[0].Modality)) {
+        studyMetadata.getData().wadoRoot = `${rootUrl}xapi/dicomweb`;
+      }
+    }
 
     const sopClassHandlerModules =
       extensionManager.modules['sopClassHandlerModule'];
