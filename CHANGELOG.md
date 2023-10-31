@@ -1,3 +1,7 @@
+**3.7.0-ALPHA-1**
+
+- Integrated dicom-microscopy-viewer v0.45.1.
+
 **3.6.0**
 
 - Minor improvements and bug fixes.
