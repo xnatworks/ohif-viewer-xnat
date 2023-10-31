@@ -11,7 +11,7 @@ const retrieveDicomWebMetadata = async (
   const dicomWebStudies = [];
 
   for (const params of dicomWebParameters) {
-    const wadoRoot = `${dwUrlRoot}/${params.projectId}/${params.experimentId}/rs/`;
+    const wadoRoot = `${dwUrlRoot}/${params.projectId}/${params.experimentId}/rs`;
     const server = {
       enableStudyLazyLoad: false,
       wadoRoot,
