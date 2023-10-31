@@ -35,6 +35,7 @@ const DicomMicroscopySopClassHandler = {
       SeriesTime: ContentTime,
       SeriesNumber,
       metadata,
+      instancesMetadata: study._data.instancesMetadata,
     };
   },
 };

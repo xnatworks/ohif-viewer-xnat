@@ -60,6 +60,8 @@ module.exports = (env, argv) => {
           'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
         // Fix itkModulesPath - https://github.com/InsightSoftwareConsortium/itk-js/issues/140
         './itkConfig$': `${PUBLIC_DIR}/config/itkConfig.js`,
+        'dicom-microscopy-viewer':
+          'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
       },
     },
     module: {
@@ -115,6 +117,15 @@ module.exports = (env, argv) => {
           from:
             '../../../node_modules/cornerstone-wado-image-loader/dist/dynamic-import',
           to: DIST_DIR,
+        },
+        // dicom-microscopy-viewer
+        {
+          from:
+            '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import',
+          to: `${DIST_DIR}`,
+          globOptions: {
+            ignore: ['*.js.map'],
+          },
         },
       ]),
       // https://github.com/faceyspacey/extract-css-chunks-webpack-plugin#webpack-4-standalone-installation

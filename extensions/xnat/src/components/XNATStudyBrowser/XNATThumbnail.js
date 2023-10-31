@@ -42,7 +42,7 @@ function ThumbnailFooter({
 
   useEffect(() => {
     let unmounted = false;
-    if (hasRois) {
+    if (hasRois && imageId) {
       hasRois.then(response => {
         const SeriesInstanceUID = cornerstone.metaData.get(
           'SeriesInstanceUID',
@@ -211,7 +211,8 @@ function ThumbnailFooter({
       <div className="series-information">
         {getInfo(SeriesNumber, 'S:')}
         {/*{getInfo(InstanceNumber, 'I:')}*/}
-        {getInfo(numImageFrames, '', 'image-frames')}
+        {numImageFrames !== undefined &&
+          getInfo(numImageFrames, '', 'image-frames')}
         {getXnatRois(xnatRois)}
         {getWarningInfo(SeriesNumber, inconsistencyWarnings)}
       </div>

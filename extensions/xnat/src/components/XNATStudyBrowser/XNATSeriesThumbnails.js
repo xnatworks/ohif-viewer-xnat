@@ -34,7 +34,7 @@ const XNATSeriesThumbnails = props => {
   return study.thumbnails
     .filter(thumb => {
       // Exclude non-displayable series
-      return thumb.imageId !== undefined;
+      return thumb.imageId !== undefined || thumb.modality === 'SM';
     })
     .map((thumb, thumbIndex) => {
       // TODO: Thumb has more props than we care about?

@@ -20,6 +20,10 @@ const getSopInstanceUidToImageIdMap = () => {
       const displaySet = displaySets[j];
       const { images } = displaySet;
 
+      if (!images) {
+        continue;
+      }
+
       for (let k = 0; k < images.length; k++) {
         const image = images[k];
         const sopInstanceUID = image.getSOPInstanceUID();

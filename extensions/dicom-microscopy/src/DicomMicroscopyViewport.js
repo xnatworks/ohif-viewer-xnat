@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import ReactResizeDetector from 'react-resize-detector';
 import debounce from 'lodash.debounce';
 
+import './ol.css';
+
 class DicomMicroscopyViewport extends Component {
   state = {
     error: null,
@@ -21,80 +23,79 @@ class DicomMicroscopyViewport extends Component {
 
   // install the microscopy renderer into the web page.
   // you should only do this once.
-  installOpenLayersRenderer(container, displaySet) {
+  async installOpenLayersRenderer(container, displaySet) {
     const dicomWebClient = displaySet.dicomWebClient;
+    const srcMetadata = displaySet.instancesMetadata;
 
-    const searchInstanceOptions = {
-      studyInstanceUID: displaySet.StudyInstanceUID,
-      seriesInstanceUID: displaySet.SeriesInstanceUID,
-    };
+    /*
+    const volumeMetadata = metadata.filter(
+      instance => instance['00080008'].Value[2] === 'VOLUME'
+    );
+    const overviewMetadata = metadata.filter(
+      instance => instance['00080008'].Value[2] === 'OVERVIEW'
+    );
+    const labelMetadata = metadata.filter(
+      instance => instance['00080008'].Value[2] === 'LABEL'
+    );
+    */
 
-    dicomWebClient
-      .searchForInstances(searchInstanceOptions)
-      .then(instances => {
-        const promises = [];
-        for (let i = 0; i < instances.length; i++) {
-          const sopInstanceUID = instances[i]['00080018']['Value'][0];
+    const api = await import(
+      /* webpackChunkName: "dicom-microscopy-viewer" */
+      'dicom-microscopy-viewer'
+    );
 
-          const retrieveInstanceOptions = {
-            studyInstanceUID: displaySet.StudyInstanceUID,
-            seriesInstanceUID: displaySet.SeriesInstanceUID,
-            sopInstanceUID,
-          };
+    const volumeImages = [];
+    const labelImages = [];
+    const overviewImages = [];
+    srcMetadata.forEach(metadata => {
+      const image = new api.metadata.VLWholeSlideMicroscopyImage({ metadata });
+      const imageSubtype = image.ImageType[2];
+      switch (imageSubtype) {
+        case 'VOLUME':
+        case 'THUMBNAIL':
+          volumeImages.push(image);
+          break;
+        case 'OVERVIEW':
+          overviewImages.push(image);
+          break;
+        case 'LABEL':
+          labelImages.push(image);
+          break;
+      }
+    });
 
-          const promise = dicomWebClient
-            .retrieveInstanceMetadata(retrieveInstanceOptions)
-            .then(metadata => {
-              const ImageType = metadata[0]['00080008']['Value'];
-              if (ImageType[2] === 'VOLUME') {
-                return metadata[0];
-              }
-            });
-          promises.push(promise);
-        }
-        return Promise.all(promises);
-      })
-      .then(async metadata => {
-        metadata = metadata.filter(m => m);
-
-        const { api } = await import(
-          /* webpackChunkName: "dicom-microscopy-viewer" */ 'dicom-microscopy-viewer'
-        );
-        const microscopyViewer = api.VLWholeSlideMicroscopyImageViewer;
-
-        try {
-          this.viewer = new microscopyViewer({
-            client: dicomWebClient,
-            metadata,
-            retrieveRendered: false,
-          });
-        } catch (error) {
-          console.error('[Microscopy Viewer] Failed to load:', error);
-          const {
-            UINotificationService,
-            LoggerService,
-          } = this.props.servicesManager.services;
-          if (UINotificationService) {
-            const message =
-              'Failed to load viewport. Please check that you have hardware acceleration enabled.';
-            LoggerService.error({ error, message });
-            UINotificationService.show({
-              autoClose: false,
-              title: 'Microscopy Viewport',
-              message,
-              type: 'error',
-            });
-          }
-        }
-
-        this.viewer.render({ container });
+    try {
+      this.viewer = new api.viewer.VolumeImageViewer({
+        client: dicomWebClient,
+        metadata: volumeImages,
+        controls: ['fullscreen', 'overview', 'position', 'zoom'],
       });
+    } catch (error) {
+      console.error('[Microscopy Viewer] Failed to load:', error);
+      const {
+        UINotificationService,
+        LoggerService,
+      } = this.props.servicesManager.services;
+      if (UINotificationService) {
+        const message =
+          'Failed to load viewport. Please check that you have hardware acceleration enabled.';
+        LoggerService.error({ error, message });
+        UINotificationService.show({
+          autoClose: false,
+          title: 'Microscopy Viewport',
+          message,
+          type: 'error',
+        });
+      }
+    }
+
+    this.viewer.render({ container });
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const { displaySet } = this.props.viewportData;
 
-    this.installOpenLayersRenderer(this.container.current, displaySet);
+    await this.installOpenLayersRenderer(this.container.current, displaySet);
   }
 
   render() {

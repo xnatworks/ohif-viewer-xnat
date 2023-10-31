@@ -6,6 +6,12 @@ import RetrieveMetadataLoader from './retrieveMetadataLoader';
 import errorHandler from '../../../errorHandler';
 import getXHRRetryRequestHook from '../../../utils/xhrRetryRequestHook';
 
+const { DICOMwebClient } = api;
+
+DICOMwebClient._buildMultipartAcceptHeaderFieldValue = () => {
+  return '*/*';
+};
+
 /**
  * Class for sync load of study metadata.
  * It inherits from RetrieveMetadataLoader
@@ -58,7 +64,7 @@ export default class RetrieveMetadataLoaderSync extends RetrieveMetadataLoader {
 
   configLoad() {
     const { server } = this;
-    const client = new api.DICOMwebClient({
+    const client = new DICOMwebClient({
       url: server.wadoRoot,
       headers: DICOMWeb.getAuthorizationHeader(server),
       errorInterceptor: errorHandler.getHTTPErrorHandler(),

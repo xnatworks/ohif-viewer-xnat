@@ -51,11 +51,20 @@ module.exports = (env, argv, { SRC_DIR, DIST_DIR }) => {
       warnings: true,
     },
     module: {
+      noParse: [/(codec)/, /(dicomicc)/],
       rules: [
         transpileJavaScriptRule(mode),
         loadWebWorkersRule,
         loadShadersRule,
         svgrLoader,
+        {
+          test: /\.wasm/,
+          use: [
+            {
+              loader: 'file-loader',
+            },
+          ],
+        },
       ],
     },
     resolve: {

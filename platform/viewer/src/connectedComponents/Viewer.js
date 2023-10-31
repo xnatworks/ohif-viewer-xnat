@@ -19,7 +19,7 @@ import dcmjs from 'dcmjs';
 // Contexts
 import WhiteLabelingContext from '../context/WhiteLabelingContext.js';
 import UserManagerContext from '../context/UserManagerContext';
-import AppContext from '../context/AppContext';
+import AppContext, { withAppContext } from '../context/AppContext';
 
 import './Viewer.css';
 import csTools from 'cornerstone-tools';
@@ -254,10 +254,17 @@ class Viewer extends Component {
   }
 
   render() {
+    const { activeContexts } = this.props;
     let VisiblePanelLeft, VisiblePanelRight;
     const panelExtensions = extensionManager.modules[MODULE_TYPES.PANEL];
 
     panelExtensions.forEach(panelExt => {
+      const isActiveExt = panelExt.module.defaultContext.some(ctx =>
+        activeContexts.includes(ctx)
+      );
+      if (!isActiveExt) {
+        return;
+      }
       panelExt.module.components.forEach(comp => {
         if (comp.id === this.state.selectedRightSidePanel) {
           VisiblePanelRight = comp.component;
@@ -400,7 +407,7 @@ class Viewer extends Component {
   }
 }
 
-export default withDialog(Viewer);
+export default withDialog(withAppContext(Viewer));
 
 /**
  * Async function to check if there are any inconsistences in the series.

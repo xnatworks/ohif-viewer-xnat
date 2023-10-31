@@ -10,6 +10,7 @@ import ConnectedViewerRetrieveStudyData from '../connectedComponents/ConnectedVi
 import NotFound from '../routes/NotFound';
 
 import { isLoggedIn, xnatAuthenticate } from '@xnat-ohif/extension-xnat';
+import retrieveDicomWebMetadata from '../lib/xnatDicomWeb/retrieveDicomWebMetadata';
 
 const { log, metadata, utils } = OHIF;
 const { studyMetadataManager, metadataUtils } = utils;
@@ -146,9 +147,32 @@ class XNATStandaloneRouting extends Component {
           //   );
           // }
 
-          log.info(JSON.stringify(jsonString, null, 2));
-
           const data = JSON.parse(jsonString);
+          log.info(data);
+
+          let studies = data.studies;
+          const dicomWebParameters = [];
+          const studyInstanceUIDs = [];
+
+          if (data.isDicomWeb) {
+            // Possibly a DICOMweb study
+            dicomWebParameters.push({
+              StudyInstanceUID: studies[0].StudyInstanceUID,
+              parentProjectId,
+              projectId,
+              subjectId,
+              experimentId,
+              experimentLabel,
+            });
+
+            return resolve({
+              studies: [],
+              studyInstanceUIDs,
+              dicomWebParameters,
+            });
+          }
+
+          studies[0].StudyDescription = experimentLabel || experimentId;
 
           commandsManager.runCommand('xnatSetSession', {
             json: data,
@@ -161,9 +185,7 @@ class XNATStandaloneRouting extends Component {
             },
           });
 
-          console.warn(data);
-
-          resolve({ studies: data.studies, studyInstanceUIDs: [] });
+          resolve({ studies, studyInstanceUIDs, dicomWebParameters });
         });
 
         // Open the Request to the server for the JSON data
@@ -211,11 +233,30 @@ class XNATStandaloneRouting extends Component {
             let studyList = {
               transactionId: subjectId,
               studies: [],
+              dicomWebParameters: [],
             };
 
             for (let i = 0; i < jsonFiles.length; i++) {
               const experimentJsonI = jsonFiles[i];
               const studiesI = experimentJsonI.studies;
+
+              // Exclude studies with no instances
+              if (studiesI.length === 0) {
+                continue;
+              }
+
+              if (experimentJsonI.isDicomWeb) {
+                // Possibly a DICOMweb study
+                studyList.dicomWebParameters.push({
+                  StudyInstanceUID: studiesI[0].StudyInstanceUID,
+                  parentProjectId,
+                  projectId,
+                  subjectId,
+                  experimentId: experimentList[i].ID,
+                  experimentLabel: experimentList[i].label,
+                });
+                continue;
+              }
 
               commandsManager.runCommand('xnatSetSession', {
                 json: experimentJsonI,
@@ -231,6 +272,7 @@ class XNATStandaloneRouting extends Component {
               // TODO -> clean this
               studiesI[0].StudyDescription =
                 experimentList[i].label || experimentList[i].ID;
+              studiesI[0].isDicomWeb = false;
 
               console.log(`Studies[${i}]`);
 
@@ -256,7 +298,11 @@ class XNATStandaloneRouting extends Component {
             //
             // console.log(studyList);
 
-            resolve({ studies: studyList.studies, studyInstanceUIDs: [] });
+            resolve({
+              studies: studyList.studies,
+              studyInstanceUIDs: [],
+              dicomWebParameters: studyList.dicomWebParameters,
+            });
           });
         });
       }
@@ -294,9 +340,23 @@ class XNATStandaloneRouting extends Component {
         studies,
         studyInstanceUIDs,
         seriesInstanceUIDs,
+        dicomWebParameters,
       } = await this.parseQueryAndRetrieveDICOMWebData(rootUrl, query);
 
-      if (studies) {
+      if (dicomWebParameters.length > 0) {
+        console.log('DICOMweb Parameters:');
+        console.log(dicomWebParameters);
+        const dicomWebStudies = await retrieveDicomWebMetadata(
+          commandsManager,
+          rootUrl,
+          dicomWebParameters
+        );
+        if (dicomWebStudies && dicomWebStudies.length > 0) {
+          studies = [...studies, ...dicomWebStudies];
+        }
+      }
+
+      if (studies && studies.length > 0) {
         // Set document title
         let documentTitle = studies[0].PatientID || studies[0].PatientName;
         documentTitle = documentTitle
@@ -324,6 +384,10 @@ class XNATStandaloneRouting extends Component {
         } = _mapStudiesToNewFormat(studies);
         studies = updatedStudies;
         studyInstanceUIDs = updatedStudiesInstanceUIDs;
+      } else {
+        throw new Error(
+          'There are no scans compatible with the XNAT OHIF Viewer.'
+        );
       }
 
       this.setState({
@@ -334,6 +398,7 @@ class XNATStandaloneRouting extends Component {
         loading: false,
       });
     } catch (error) {
+      console.error(error);
       this.setState({ error: error.message, loading: false });
     }
   }
@@ -372,6 +437,7 @@ const _mapStudiesToNewFormat = studies => {
   /* Map studies to new format, update metadata manager? */
   const uniqueStudyUIDs = new Set();
   const updatedStudies = studies.map(study => {
+    const isDicomWeb = study.isDicomWeb;
     const studyMetadata = new OHIFStudyMetadata(study, study.StudyInstanceUID);
 
     const sopClassHandlerModules =
@@ -379,6 +445,7 @@ const _mapStudiesToNewFormat = studies => {
     study.displaySets =
       study.displaySets ||
       studyMetadata.createDisplaySets(sopClassHandlerModules);
+    study.displaySets.forEach(ds => (ds.isDicomWeb = isDicomWeb));
 
     studyMetadataManager.add(studyMetadata);
     uniqueStudyUIDs.add(study.StudyInstanceUID);

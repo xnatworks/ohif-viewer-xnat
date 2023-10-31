@@ -35,6 +35,11 @@
   "dependencies": {
     "@babel/runtime": "^7.5.5",
     "classnames": "^2.2.6",
-    "dicom-microscopy-viewer": "^0.6.1"
+    "@cornerstonejs/codec-charls": "^1.2.3",
+    "@cornerstonejs/codec-libjpeg-turbo-8bit": "^1.2.2",
+    "@cornerstonejs/codec-openjpeg": "^1.2.2",
+    "colormap": "^2.3",
+    "dicom-microscopy-viewer": "link:../../../../dicom-microscopy-viewer/icr-dicom-microscopy-viewer",
+    "dicomicc": "^0.1"
   }
 }
