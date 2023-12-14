@@ -1,3 +1,7 @@
+**3.7.0-BETA-1**
+
+- Provide detailed error messages from the microscopy viewer.
+
 **3.7.0-ALPHA-1**
 
 - Integrated dicom-microscopy-viewer v0.45.1.
