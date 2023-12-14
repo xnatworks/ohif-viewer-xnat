@@ -27,18 +27,6 @@ class DicomMicroscopyViewport extends Component {
     const dicomWebClient = displaySet.dicomWebClient;
     const srcMetadata = displaySet.instancesMetadata;
 
-    /*
-    const volumeMetadata = metadata.filter(
-      instance => instance['00080008'].Value[2] === 'VOLUME'
-    );
-    const overviewMetadata = metadata.filter(
-      instance => instance['00080008'].Value[2] === 'OVERVIEW'
-    );
-    const labelMetadata = metadata.filter(
-      instance => instance['00080008'].Value[2] === 'LABEL'
-    );
-    */
-
     const api = await import(
       /* webpackChunkName: "dicom-microscopy-viewer" */
       'dicom-microscopy-viewer'
@@ -77,8 +65,8 @@ class DicomMicroscopyViewport extends Component {
         LoggerService,
       } = this.props.servicesManager.services;
       if (UINotificationService) {
-        const message =
-          'Failed to load viewport. Please check that you have hardware acceleration enabled.';
+        const errorMessage = error.message || 'Unknown error!';
+        const message = `Microscopy Viewer failed to load: ${errorMessage}`;
         LoggerService.error({ error, message });
         UINotificationService.show({
           autoClose: false,
