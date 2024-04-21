@@ -58,6 +58,22 @@ const onImageLoaded = event => {
     return;
   }
 
+  if (image.windowWidth !== undefined && image.windowWidth === 0) {
+    if (image.imageFrame && image.imageFrame.pixelData) {
+      const vMin = Math.min.apply(null, image.imageFrame.pixelData);
+      const vMax = Math.max.apply(null, image.imageFrame.pixelData);
+      let moMin = vMin;
+      let moMax = vMax;
+      if (image.slope !== undefined && image.intercept !== undefined) {
+        moMin = vMin * image.slope + image.intercept;
+        moMax = vMax * image.slope + image.intercept;
+      }
+      const windowWidth = moMax - moMin;
+      image.windowWidth = windowWidth === 0 ? 10 : windowWidth;
+      image.windowCenter = Math.floor(image.windowWidth / 2);
+    }
+  }
+
   image.displayedArea = getDisplayedArea(image);
 };
 
@@ -97,6 +113,20 @@ const onPreRender = event => {
   const { viewport, image } = eventDetail.enabledElement;
   if (!viewport || !image) {
     return;
+  }
+
+  if (isNaN(image.windowCenter) || isNaN(image.windowWidth)) {
+    const { WindowCenter, WindowWidth } = cornerstone.metaData.get(
+      'instance',
+      image.imageId
+    );
+    image.windowCenter = WindowCenter || [80];
+    image.windowWidth = WindowWidth || [400];
+    if (getWindowing(eventDetail.enabledElement.uuid) === 'Default') {
+      const voi = viewport.voi;
+      voi.windowCenter = image.windowCenter;
+      voi.windowWidth = image.windowWidth;
+    }
   }
 
   viewport.displayedArea = image.displayedArea;

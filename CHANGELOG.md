@@ -6,6 +6,24 @@
 
 - Integrated dicom-microscopy-viewer v0.45.1.
 
+**3.6.2**
+
+- Support 4-D datasets with duplicate InstanceNumber values.
+- Additional dimension tags for the grouping stacks in 4-D datasets.
+- Dynamic window width calculation when the value is zero.
+- Fixed issues preventing from parsing and displaying NM images.
+- Fixed the detection of orientation upon importing segmentations.
+- Fixed the middle frame calculation used for displaying the thumbnail images.
+- Fixed irregular spacing wrongly detected as missing frames.
+
+**3.6.1**
+
+- Automated the detection of 4-D stack dimensions when creating multi-stack displays.
+- Enabled the grouping of DICOM Enhanced images belonging to the same scan into a single Cluster.
+- Display the number of study scans in the Scans panel.
+- Simplified the data validation for enabling the 3D MPR mode.
+- Fixed invalid VOI Attributes provided by the cornerstone-wado-image-loader.
+
 **3.6.0**
 
 - Minor improvements and bug fixes.

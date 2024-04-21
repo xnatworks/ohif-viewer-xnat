@@ -614,6 +614,12 @@ const _isDisplaySetActive = function(
     active = subStackGroupData.hasActiveDisplaySet(activeDisplaySetInstanceUID);
   }
 
+  if (displaySet.hasMultiDisplaySets && displaySet.subDisplaySetGroupData) {
+    active = displaySet.subDisplaySetGroupData.hasActiveDisplaySet(
+      activeDisplaySetInstanceUID
+    );
+  }
+
   return active;
 };
 
@@ -631,11 +637,11 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
   return studies.map(study => {
     const { StudyInstanceUID, StudyDescription } = study;
 
-    const nonSubStackDisplaySets = study.displaySets.filter(
-      displaySet => !displaySet.isSubStack
+    const thumbnailEnabledDisplaySets = study.displaySets.filter(
+      displaySet => displaySet.isThumbnailViewEnabled
     );
 
-    const thumbnails = nonSubStackDisplaySets.map(displaySet => {
+    const thumbnails = thumbnailEnabledDisplaySets.map(displaySet => {
       const {
         displaySetInstanceUID,
         SeriesDescription,
@@ -644,6 +650,7 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
         SeriesNumber,
         seriesNotation,
         isValidMultiStack,
+        hasMultiDisplaySets,
       } = displaySet;
 
       const modality = displaySet.Modality || 'UN';
@@ -659,9 +666,15 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
         altImageText = 'SEG';
       } else if (displaySet.images && displaySet.images.length) {
         const imageIndex = displaySet.middleImageIndex;
-        imageId = displaySet.images[imageIndex].getImageId();
-        SOPInstanceUID = displaySet.images[imageIndex].getData().metadata
-          .SOPInstanceUID;
+        if (displaySet.isMultiFrame) {
+          imageId = `${displaySet.images[0].getImageId()}?frame=${imageIndex}`;
+          SOPInstanceUID = displaySet.images[0].getData().metadata
+            .SOPInstanceUID;
+        } else {
+          imageId = displaySet.images[imageIndex].getImageId();
+          SOPInstanceUID = displaySet.images[imageIndex].getData().metadata
+            .SOPInstanceUID;
+        }
       } else {
         altImageText = modality;
       }
@@ -690,6 +703,7 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
         SOPInstanceUID,
         modality,
         isValidMultiStack,
+        hasMultiDisplaySets,
       };
     });
 

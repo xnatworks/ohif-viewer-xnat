@@ -20,7 +20,7 @@ import errorHandler from '../../errorHandler';
 import isLowPriorityModality from '../../utils/isLowPriorityModality';
 import getXHRRetryRequestHook from '../../utils/xhrRetryRequestHook';
 import { ReconstructionIssues } from '../../enums';
-import { metadataUtils } from '../../utils';
+import createDisplaySetGroup from '../../utils/createDisplaySetGroup';
 
 class StudyMetadata extends Metadata {
   constructor(data, uid) {
@@ -166,6 +166,7 @@ class StudyMetadata extends Metadata {
     // into their own specific display sets. Place the rest of each
     // series into another display set.
     const stackableInstances = [];
+    const multiframeDisplaySets = [];
     series.forEachInstance(instance => {
       // All imaging modalities must have a valid value for SOPClassUID (x00080016) or Rows (x00280010)
       if (
@@ -189,7 +190,8 @@ class StudyMetadata extends Metadata {
           InstanceNumber: instance.getTagValue('InstanceNumber'), // Include the instance number
           AcquisitionDatetime: instance.getTagValue('AcquisitionDateTime'), // Include the acquisition datetime
         });
-        displaySets.push(displaySet);
+        // displaySets.push(displaySet);
+        multiframeDisplaySets.push(displaySet);
       } else if (isSingleImageModality(instance.Modality)) {
         displaySet = makeDisplaySet(series, [instance]);
         displaySet.setAttributes({
@@ -205,13 +207,31 @@ class StudyMetadata extends Metadata {
       }
     });
 
+    let stackableDisplaySet;
     if (stackableInstances.length) {
-      const displaySet = makeDisplaySet(series, stackableInstances);
-      displaySet.setAttribute('StudyInstanceUID', study.getStudyInstanceUID());
-      displaySet.setAttributes({
+      stackableDisplaySet = makeDisplaySet(series, stackableInstances);
+      stackableDisplaySet.setAttribute('StudyInstanceUID', study.getStudyInstanceUID());
+      stackableDisplaySet.setAttributes({
         sopClassUIDs,
       });
-      displaySets.push(displaySet);
+    }
+
+    // If mixed stackable and multi-frame group
+    if (stackableDisplaySet && multiframeDisplaySets.length) {
+      multiframeDisplaySets.push(stackableDisplaySet);
+      stackableDisplaySet = undefined;
+    }
+
+    if (multiframeDisplaySets.length === 1) {
+      displaySets.push(multiframeDisplaySets[0]);
+    } else if (multiframeDisplaySets.length > 1) {
+      // Allow only for the first multi-frame instance to be displayed
+      createDisplaySetGroup(multiframeDisplaySets);
+      displaySets.push(...multiframeDisplaySets);
+    }
+
+    if (stackableDisplaySet) {
+      displaySets.push(stackableDisplaySet);
     }
 
     return displaySets;
@@ -875,10 +895,19 @@ const makeDisplaySet = (series, instances) => {
     isMultiFrame: isMultiFrame(instance),
     FrameOfReferenceUID: instance.getTagValue('FrameOfReferenceUID'),
     isEnhanced: seriesData.isEnhanced,
-    is4D: seriesData.is4D,
-    numberOfSubInstances: seriesData.numberOfSubInstances,
     isMultiStack: seriesData.isMultiStack,
+    series4DConfig: { ...seriesData._4DConfig },
+    isThumbnailViewEnabled: true,
   });
+
+  const { is4D, numberOfSubInstances } = imageSet.series4DConfig;
+  let middleImageIndex = instances.length;
+  if (is4D) {
+    middleImageIndex = numberOfSubInstances;
+  } else if (imageSet.isMultiFrame) {
+    middleImageIndex = instance.getTagValue('NumberOfFrames');
+  }
+  middleImageIndex = Math.floor(middleImageIndex / 2);
 
   // Sort the images in this series by instanceNumber
   const shallSort = true; //!OHIF.utils.ObjectPath.get(Meteor, 'settings.public.ui.sortSeriesByIncomingOrder');
@@ -901,19 +930,25 @@ const makeDisplaySet = (series, instances) => {
   const displayReconstructableInfo = isDisplaySetReconstructable(instances);
   imageSet.isReconstructable = displayReconstructableInfo.isReconstructable;
 
-  const { is4D, numberOfSubInstances } = imageSet;
   if (is4D) {
     displayReconstructableInfo.reconstructionIssues.push(
       ReconstructionIssues.DATASET_4D
     );
+    imageSet.isReconstructable = false;
   }
 
   let displaySpacingInfo = undefined;
-  if (shallSort && imageSet.isReconstructable && !imageSet.isMultiFrame) {
+  if (
+    shallSort &&
+    imageSet.isReconstructable &&
+    !imageSet.isMultiFrame &&
+    !is4D
+  ) {
     // sort images by image position
     imageSet.sliceSpacingFirstFrame = imageSet.sortByImagePositionPatient();
 
-    // check if the spacing is uniform and update isReconstructable
+    // check if the spacing is uniform and update isReconstructable.
+    // TodO: The is4D parameter is redundant?
     displaySpacingInfo = isSpacingUniform(imageSet.images, is4D);
 
     imageSet.isReconstructable =
@@ -941,9 +976,6 @@ const makeDisplaySet = (series, instances) => {
     preferences.experimentalFeatures.DisplayScanFromTheMiddle;
   const displayFromTheMiddleEnabled =
     !!DisplayScanFromTheMiddle && DisplayScanFromTheMiddle.enabled;
-  const numImages =
-    numberOfSubInstances > 1 ? numberOfSubInstances : instances.length;
-  const middleImageIndex = Math.floor(numImages / 2);
   imageSet.setAttribute('middleImageIndex', middleImageIndex);
   imageSet.setAttribute('firstShow', displayFromTheMiddleEnabled);
 

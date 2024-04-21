@@ -52,13 +52,6 @@ class MetadataProvider {
     return dataset;
   }
 
-  shouldFetchDataset(dicomJSONDataset) {
-    const hasPaletteColor =
-      dicomJSONDataset.PhotometricInterpretation === 'PALETTE COLOR';
-    const isEnhanced = isEnhancedSOP(dicomJSONDataset.SOPClassUID);
-    return hasPaletteColor || isEnhanced;
-  }
-
   loadMetadataFromImage(imageId) {
     if (this.isMetadataLoadedFromImage.includes(imageId)) {
       return true;
@@ -120,10 +113,7 @@ class MetadataProvider {
 
     let dicomJSONDatasetOrP10ArrayBuffer;
     if (isXnatConfig) {
-      if (
-        this.shouldFetchDataset(_dicomJSONDatasetOrP10ArrayBuffer) ||
-        options.shouldFetchDataset
-      ) {
+      if (options.shouldFetchDataset) {
         const image = await cornerstone.loadAndCacheImage(options.imageId);
         const arrayBuffer = image.data.byteArray.buffer;
         dicomJSONDatasetOrP10ArrayBuffer = this.readDataset(
@@ -260,28 +250,28 @@ class MetadataProvider {
 
   get(query, imageId, options = { fallback: false }) {
     let instance;
-
     let frameIndex;
-    if (isXnatConfig) {
-      if (query === WADO_IMAGE_LOADER_TAGS.VOI_LUT_MODULE) {
-        // The XNAT Viewer plugin sets WL/WW to [80, 400] for missing values
-        return;
-      }
+    let imageIdToUse = imageId;
 
-      let enableMetaPrefetch = true;
-      if (enableMetaPrefetch) {
-        // Attempt to load metadata from instance
-        let imageIdToUse = imageId;
-        const qIndex = imageId.indexOf('?frame=');
-        if (qIndex > 0) {
-          imageIdToUse = imageId.substring(0, qIndex);
-          frameIndex = imageId.substring(qIndex + 7); //'?frame='.length;
-        }
-        this.loadMetadataFromImage(imageIdToUse);
-      }
+    if (query === WADO_IMAGE_LOADER_TAGS.VOI_LUT_MODULE) {
+      // The XNAT Viewer plugin sets WL/WW to [80, 400] for missing values
+      return;
     }
 
+    // Attempt to load metadata from instance
+    const qIndex = imageId.indexOf('?frame=');
+    if (qIndex > 0) {
+      imageIdToUse = imageId.substring(0, qIndex);
+      frameIndex = imageId.substring(qIndex + 7); //'?frame='.length;
+    }
+    this.loadMetadataFromImage(imageIdToUse);
+
     instance = this._getInstance(imageId);
+    if (!instance) {
+      // For the NM modality, the image ID with frame is not mapped to UIDs,
+      // so use the image ID without frame number
+      instance = this._getInstance(imageIdToUse);
+    }
 
     if (query === INSTANCE) {
       return instance;
@@ -368,7 +358,8 @@ class MetadataProvider {
         let ImageOrientationPatient;
         let ImagePositionPatient;
 
-        if (instance.Modality === 'NM') {
+        if (instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.20') {
+          // NM modality
           const planeinfo = getImagePlaneInformation(
             instance,
             frameIndex ? frameIndex : 0
@@ -536,15 +527,26 @@ class MetadataProvider {
             : RadiopharmaceuticalInformationSequence;
 
           const {
-            RadiopharmaceuticalStartTime,
+            RadiopharmaceuticalStartTime, // deprecated in favor of Radiopharmaceutical Start DateTime (0018,1078)
+            RadiopharmaceuticalStartDateTime,
             RadionuclideTotalDose,
             RadionuclideHalfLife,
           } = RadiopharmaceuticalInformation;
 
-          const radiopharmaceuticalInfo = {
-            radiopharmaceuticalStartTime: dicomParser.parseTM(
+          let radiopharmaceuticalStartTime = instance.SeriesTime;
+          if (RadiopharmaceuticalStartTime) {
+            radiopharmaceuticalStartTime = dicomParser.parseTM(
               RadiopharmaceuticalStartTime
-            ),
+            );
+          } else if (RadiopharmaceuticalStartDateTime) {
+            radiopharmaceuticalStartTime = dicomParser.parseTM(
+              RadiopharmaceuticalStartDateTime.slice(8)
+            );
+          }
+
+
+          const radiopharmaceuticalInfo = {
+            radiopharmaceuticalStartTime,
             radionuclideTotalDose: RadionuclideTotalDose,
             radionuclideHalfLife: RadionuclideHalfLife,
           };
