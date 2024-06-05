@@ -29,7 +29,12 @@ const retrieveDicomWebMetadata = async (
       studyMetadata.StudyDescription =
         params.experimentLabel || params.experimentId;
       studyMetadata.series.forEach(series => {
-        series.instances.forEach(instance => (instance.url = ''));
+        const srcMetadata = [];
+        series.instances.forEach(instance => {
+          instance.url = '';
+          srcMetadata.push(instance.srcMetadata);
+        });
+        series.srcMetadata = srcMetadata;
       });
 
       dicomWebStudies.push(studyMetadata);

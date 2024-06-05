@@ -21,6 +21,8 @@ import user from './user.js';
 import errorHandler from './errorHandler.js';
 import utils, { hotkeys } from './utils/';
 import { ReconstructionIssues } from './enums';
+import dynamicLoaders from './dynamicLoaders';
+import state from './state';
 
 import {
   UINotificationService,
@@ -65,6 +67,10 @@ const OHIF = {
   LoggerService,
   //
   ReconstructionIssues,
+  //
+  dynamicLoaders,
+  //
+  state,
 };
 
 export {
@@ -99,6 +105,8 @@ export {
   UIDialogService,
   MeasurementService,
   LoggerService,
+  //
+  state,
 };
 
 export { OHIF };

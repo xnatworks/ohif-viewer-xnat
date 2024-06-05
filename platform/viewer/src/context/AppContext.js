@@ -7,6 +7,7 @@ let AppContext = React.createContext({});
 export const CONTEXTS = {
   CORNERSTONE: 'ACTIVE_VIEWPORT::CORNERSTONE',
   VTK: 'ACTIVE_VIEWPORT::VTK',
+  MICROSCOPY: 'ACTIVE_VIEWPORT::MICROSCOPY',
 };
 
 export const useAppContext = () => useContext(AppContext);

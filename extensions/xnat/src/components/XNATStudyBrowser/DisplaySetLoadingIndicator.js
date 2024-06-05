@@ -23,11 +23,15 @@ const getDisplaySet = displaySetInstanceUID => {
 const DisplaySetLoadingIndicator = props => {
   const { displaySetInstanceUID } = props;
   const displaySet = getDisplaySet(displaySetInstanceUID);
-  const dataLoadingProgress = displaySet.dataLoadingProgress;
+  const dataLoadingProgress = displaySet.dataLoadingProgress || {};
 
   const [loadingStatus, setLoadingStatus] = useState(
     dataLoadingProgress.loadingStatus
   );
+
+  if (!dataLoadingProgress.hasOwnProperty(loadingStatus)) {
+    return <div />;
+  }
 
   let content = null;
   if (loadingStatus === DISPLAY_SET_LOADING_STATUS.LOADED) {

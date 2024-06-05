@@ -2052,7 +2052,7 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-charls/-/codec-charls-0.1.1.tgz#e55d4aa908732d0cc902888b7f3856c5a996df7f"
   integrity sha512-Y250DGVzmownJ7WgpHxNqWvfTnv4/malaKm/tWm0xE1FxhQE8iErMWFpKxpNDk3MdfXO4/98piVsUwmJMiWoDQ==
 
-"@cornerstonejs/codec-charls@^1.2.1", "@cornerstonejs/codec-charls@^1.2.3":
+"@cornerstonejs/codec-charls@^1.2.1":
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-charls/-/codec-charls-1.2.3.tgz#6952c420486822ac8404409ae0ed5a559aff6e25"
   integrity sha512-qKUe6DN0dnGzhhfZLYhH9UZacMcudjxcaLXCrpxJImT/M/PQvZCT2rllu6VGJbWKJWG+dMVV2zmmleZcdJ7/cA==
@@ -2062,7 +2062,7 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-libjpeg-turbo-8bit/-/codec-libjpeg-turbo-8bit-0.0.7.tgz#2ea9b575eed19e6e7e3701b7a50a4ae0ffbef0c4"
   integrity sha512-qgm6BuVAy5mNP8SJ+A6+VbmPnqgj8jPvJrw4HbUoAzndmf9/VHjTYwawn3kmZWya5ErFAsXQ6c0U0noB1LKAiA==
 
-"@cornerstonejs/codec-libjpeg-turbo-8bit@^1.2.1", "@cornerstonejs/codec-libjpeg-turbo-8bit@^1.2.2":
+"@cornerstonejs/codec-libjpeg-turbo-8bit@^1.2.1":
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-libjpeg-turbo-8bit/-/codec-libjpeg-turbo-8bit-1.2.2.tgz#ae384b149d6655e3dd6e18b9891fab479ab5e144"
   integrity sha512-aAUMK2958YNpOb/7G6e2/aG7hExTiFTASlMt/v90XA0pRHdWiNg5ny4S5SAju0FbIw4zcMnR0qfY+yW3VG2ivg==
@@ -2072,7 +2072,7 @@
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjpeg/-/codec-openjpeg-0.1.0.tgz#5bca10ae2980ff681ebcdace2074a0adaf12ad86"
   integrity sha512-9mwseBidYPQ1rGPcUU8JriQnzUi5Bgtontqca7gw47uzxC4Zamoc1Kuho5LUpbS1LSnOLePOkDrg/LCYhJIq8g==
 
-"@cornerstonejs/codec-openjpeg@^1.2.1", "@cornerstonejs/codec-openjpeg@^1.2.2":
+"@cornerstonejs/codec-openjpeg@^1.2.1":
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/@cornerstonejs/codec-openjpeg/-/codec-openjpeg-1.2.2.tgz#f0b524235b5551426b46db197a37b06f8ac805d7"
   integrity sha512-b1O7lZacKXelgeV9n8XWZ7pTw3i4Bq4qQ26G5ahBjWoOw4QNcCrb5hPxWBxNB/I8AoNbJxAe+lyLtyQGfdrTbw==
@@ -5795,9 +5795,9 @@ caniuse-api@^3.0.0:
     lodash.uniq "^4.5.0"
 
 caniuse-lite@^1.0.0, caniuse-lite@^1.0.30000981, caniuse-lite@^1.0.30000989, caniuse-lite@^1.0.30001004, caniuse-lite@^1.0.30001286:
-  version "1.0.30001551"
-  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001551.tgz"
-  integrity sha512-vtBAez47BoGMMzlbYhfXrMV1kvRF2WP/lqiMuDu1Sb4EE4LKEgjopFDSRtZfdVnslNRpOqV/woE+Xgrwj6VQlg==
+  version "1.0.30001625"
+  resolved "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001625.tgz"
+  integrity sha512-4KE9N2gcRH+HQhpeiRZXd+1niLB/XNLAhSy4z7fI8EzcbcPoAqjNInxVHTiTwWfTIV4w096XG8OtCOCQQKPv3w==
 
 capitalize@^2.0.0:
   version "2.0.0"
@@ -7652,9 +7652,21 @@ diagnostics@^1.1.1:
     enabled "1.0.x"
     kuler "1.0.x"
 
-"dicom-microscopy-viewer@link:../../dicom-microscopy-viewer/icr-dicom-microscopy-viewer":
-  version "0.0.0"
-  uid ""
+"dicom-microscopy-viewer@https://github.com/moalsad/icr-dicom-microscopy-viewer.git#0.45.1-Patch.2":
+  version "0.45.1"
+  resolved "https://github.com/moalsad/icr-dicom-microscopy-viewer.git#8857efe9527116abad5a2566d69623a3a15d2b51"
+  dependencies:
+    "@cornerstonejs/codec-charls" "^1.2.1"
+    "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.1"
+    "@cornerstonejs/codec-openjpeg" "^1.2.1"
+    colormap "^2.3"
+    dcmjs "^0.27"
+    dicomicc "^0.1"
+    dicomweb-client "^0.8"
+    image-type "^4.1"
+    mathjs "^11.2"
+    ol "^7.1"
+    uuid "^9.0"
 
 dicom-parser@^1.8.11, dicom-parser@^1.8.9:
   version "1.8.11"

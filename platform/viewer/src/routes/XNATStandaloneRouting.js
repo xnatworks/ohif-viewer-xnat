@@ -156,7 +156,7 @@ class XNATStandaloneRouting extends Component {
           if (data.isDicomWeb) {
             // Possibly a DICOMweb study
             dicomWebParameters.push({
-              StudyInstanceUID: studies[0].StudyInstanceUID,
+              StudyInstanceUID: data.studies[0].StudyInstanceUID,
               parentProjectId,
               projectId,
               subjectId,
@@ -177,8 +177,7 @@ class XNATStandaloneRouting extends Component {
 
           data.studies = studies;
           if (studies.length === 0) {
-            resolve({ studies: [], studyInstanceUIDs: [] });
-            return;
+            return resolve({ studies: [], studyInstanceUIDs: [] });
           }
 
           commandsManager.runCommand('xnatSetSession', {
@@ -253,25 +252,26 @@ class XNATStandaloneRouting extends Component {
 
             for (let i = 0; i < jsonFiles.length; i++) {
               const experimentJsonI = jsonFiles[i];
-              const studiesI = experimentJsonI.studies.filter(
-                study => study.series !== undefined
-              );
-
-              // Exclude studies with no instances
-              if (studiesI.length === 0) {
-                continue;
-              }
 
               if (experimentJsonI.isDicomWeb) {
                 // Possibly a DICOMweb study
                 studyList.dicomWebParameters.push({
-                  StudyInstanceUID: studiesI[0].StudyInstanceUID,
+                  StudyInstanceUID: experimentJsonI.studies[0].StudyInstanceUID,
                   parentProjectId,
                   projectId,
                   subjectId,
                   experimentId: experimentList[i].ID,
                   experimentLabel: experimentList[i].label,
                 });
+                continue;
+              }
+
+              const studiesI = experimentJsonI.studies.filter(
+                study => study.series !== undefined
+              );
+
+              // Exclude studies with no instances
+              if (studiesI.length === 0) {
                 continue;
               }
 
@@ -580,6 +580,9 @@ function reassignInstanceUrls(studies, rootUrl) {
     study.series.forEach(series => {
       series.instances.forEach(instance => {
         let relUrl = instance.url;
+        if (!relUrl) {
+          return;
+        }
         if (relUrl.startsWith('dicomweb')) {
           // Strip to relative URL
           const idx = relUrl.indexOf(archiveUrl);

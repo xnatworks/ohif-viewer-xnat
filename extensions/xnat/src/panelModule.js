@@ -85,18 +85,21 @@ const PanelModule = (commandsManager, api, servicesManager) => {
         label: 'Contours',
         from: 'right',
         target: 'xnat-contour-panel',
+        context: ['ACTIVE_VIEWPORT::CORNERSTONE'],
       },
       {
         icon: 'xnat-mask',
         label: 'Masks',
         from: 'right',
         target: 'xnat-segmentation-panel',
+        context: ['ACTIVE_VIEWPORT::CORNERSTONE'],
       },
       {
         icon: 'xnat-annotations',
         label: 'Measurements',
         from: 'right',
         target: 'xnat-measurement-panel',
+        context: ['ACTIVE_VIEWPORT::CORNERSTONE'],
       },
     ],
     components: [
@@ -117,7 +120,12 @@ const PanelModule = (commandsManager, api, servicesManager) => {
         component: ExtendedXNATMeasurementPanel,
       },
     ],
-    defaultContext: ['ACTIVE_VIEWPORT::CORNERSTONE'],
+    defaultContext: [
+      'ACTIVE_VIEWPORT::CORNERSTONE',
+      'ACTIVE_VIEWPORT::MICROSCOPY',
+    ],
+    selectedLeftSidePanel: 'studies',
+    selectedRightSidePanel: '',
   };
 };
 

@@ -13,7 +13,7 @@ const SidePanel = ({ from, isOpen, children, width }) => {
   // const isVTK = activeContexts.includes(CONTEXTS.VTK);
   // if (isVTK) return null;
 
-  if (children === undefined) return null;
+  if (!children) return null;
 
   const styles = width
     ? {

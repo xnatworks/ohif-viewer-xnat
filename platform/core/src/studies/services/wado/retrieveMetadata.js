@@ -48,7 +48,6 @@ async function RetrieveMetadataFromXnat(
   }
 
   const studyMetadata = await rml.posLoad(loadData);
-  studyMetadata.instancesMetadata = loadData;
 
   return studyMetadata;
 }

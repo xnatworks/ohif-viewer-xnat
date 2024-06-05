@@ -247,8 +247,8 @@ class ToolbarRow extends Component {
       this.state.activeButtons
     );
 
-    const showLayoutButton = this.props.activeContexts.includes(
-      'ACTIVE_VIEWPORT::CORNERSTONE'
+    const showLayoutButton = !this.props.activeContexts.includes(
+      'ACTIVE_VIEWPORT::VTK'
     );
 
     const onPress = (side, value) => {

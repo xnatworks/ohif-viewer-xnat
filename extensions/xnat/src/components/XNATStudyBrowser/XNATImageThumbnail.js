@@ -98,7 +98,9 @@ function XNATImageThumbnail(props) {
   useEffect(() => {
     if (image.imageId) {
       checkAndFixVoi(image);
-      cornerstone.renderToCanvas(canvasRef.current, image);
+      cornerstone.renderToCanvas(canvasRef.current, image, {
+        rotation: image.angle,
+      });
       renderThumbnailOverlay(canvasRef.current, image);
       setLoading(false);
     }

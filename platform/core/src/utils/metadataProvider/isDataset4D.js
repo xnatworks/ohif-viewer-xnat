@@ -19,6 +19,12 @@ const isDataset4D = instances => {
     return result;
   }
 
+  const firstInstance = instances[0];
+  // SM modality
+  if (firstInstance.metadata.SOPClassUID === '1.2.840.10008.5.1.4.1.1.77.1.6') {
+    return result;
+  }
+
   result.hasMultiFrameInstances = instances.some(
     instance => instance.metadata.NumberOfFrames > 1
   );

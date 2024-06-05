@@ -47,6 +47,9 @@ class XNATMeasurementApi {
     let seriesCollection = this._seriesCollections.get(displaySetInstanceUID);
     if (!seriesCollection) {
       const paras = getSeriesAttributes(displaySetInstanceUID);
+      if (!paras) {
+        return;
+      }
       seriesCollection = {
         workingCollection: new ImageMeasurementCollection({ paras }),
         importedCollections: [],
