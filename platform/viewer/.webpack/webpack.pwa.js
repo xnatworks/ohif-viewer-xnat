@@ -60,8 +60,8 @@ module.exports = (env, argv) => {
           'cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js',
         // Fix itkModulesPath - https://github.com/InsightSoftwareConsortium/itk-js/issues/140
         './itkConfig$': `${PUBLIC_DIR}/config/itkConfig.js`,
-        // 'dicom-microscopy-viewer':
-        //   'dicom-microscopy-viewer/dist/dynamic-import/dicom-microscopy-viewer/dicomMicroscopyViewer.min.js',
+        'dicom-microscopy-viewer':
+          'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js'
       },
     },
     module: {
@@ -120,19 +120,10 @@ module.exports = (env, argv) => {
         },
         // dicom-microscopy-viewer
         {
-          // from:
-          //   '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import',
-          // to: `${DIST_DIR}`,
-          // globOptions: {
-          // ignore: ['*.js.map'],
-          // },
-          // Replace template with {js,wasm,map} for debuting
-          from: `${ROOT_MODULES_DIR}/dicom-microscopy-viewer/dist/dynamic-import/dicom-microscopy-viewer/*.{js,wasm}`,
-          to: `${DIST_DIR}/dicom-microscopy-viewer/[name].[ext]`,
+          // Replace template with {js,wasm,map} for debugging
+          from: `${ROOT_MODULES_DIR}/dicom-microscopy-viewer/dist/dynamic-import/*.{js,wasm}`,
+          to: `${DIST_DIR}/[name].[ext]`,
           toType: 'template',
-          // globOptions: {
-          //   ignore: ['*.js.map'],
-          // },
         },
       ]),
       // https://github.com/faceyspacey/extract-css-chunks-webpack-plugin#webpack-4-standalone-installation

@@ -7652,9 +7652,9 @@ diagnostics@^1.1.1:
     enabled "1.0.x"
     kuler "1.0.x"
 
-"dicom-microscopy-viewer@https://github.com/moalsad/icr-dicom-microscopy-viewer.git#0.45.1-Patch.2":
+"dicom-microscopy-viewer@https://github.com/moalsad/icr-dicom-microscopy-viewer.git#0.45.1-Patch.3":
   version "0.45.1"
-  resolved "https://github.com/moalsad/icr-dicom-microscopy-viewer.git#8857efe9527116abad5a2566d69623a3a15d2b51"
+  resolved "https://github.com/moalsad/icr-dicom-microscopy-viewer.git#2740921ecca69f20ffa7e7500098b95e96427440"
   dependencies:
     "@cornerstonejs/codec-charls" "^1.2.1"
     "@cornerstonejs/codec-libjpeg-turbo-8bit" "^1.2.1"

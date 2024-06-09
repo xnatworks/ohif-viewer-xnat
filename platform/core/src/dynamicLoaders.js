@@ -1,12 +1,14 @@
+let dicomMicroscopyViewer;
+
 const getDicomMicroscopyApi = async () => {
-  let api = window.dicomMicroscopyViewer;
+  let api = dicomMicroscopyViewer;
   if (api === undefined) {
     console.info('Loading the dicomMicroscopyViewer module...');
-    await import(
-      /* webpackIgnore: true */
-      `${process.env.PUBLIC_URL}dicom-microscopy-viewer/dicomMicroscopyViewer.min.js`
+    dicomMicroscopyViewer = await import(
+      /* webpackChunkName: "dicom-microscopy-viewer" */
+      'dicom-microscopy-viewer'
     );
-    api = window.dicomMicroscopyViewer;
+    api = dicomMicroscopyViewer;
   }
 
   if (!api || !api.metadata) {
