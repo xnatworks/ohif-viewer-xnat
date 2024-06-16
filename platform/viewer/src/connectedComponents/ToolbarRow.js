@@ -485,7 +485,7 @@ function _handleBuiltIn(button) {
 
   if (options.behavior === 'DOWNLOAD_SCREEN_SHOT') {
     commandsManager.runCommand('showDownloadViewportModal', {
-      title: t('Download High Quality Image'),
+      title: t('Download Snapshot Image'),
     });
   }
 }

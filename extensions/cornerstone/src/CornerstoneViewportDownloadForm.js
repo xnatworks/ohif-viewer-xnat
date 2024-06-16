@@ -12,7 +12,11 @@ const MINIMUM_SIZE = 100;
 const DEFAULT_SIZE = 512;
 const MAX_TEXTURE_SIZE = 10000;
 
-const CornerstoneViewportDownloadForm = ({ onClose, activeViewportIndex }) => {
+const CornerstoneViewportDownloadForm = ({
+  onClose,
+  activeViewportIndex,
+  UINotificationService,
+}) => {
   const activeEnabledElement = getEnabledElement(activeViewportIndex);
 
   const enableViewport = viewportElement => {
@@ -70,6 +74,19 @@ const CornerstoneViewportDownloadForm = ({ onClose, activeViewportIndex }) => {
         };
 
         cornerstone.loadImage(enabledElement.image.imageId).then(image => {
+          const stackState = cornerstoneTools.getToolState(
+            viewportElement,
+            'stack'
+          );
+          if (!stackState) {
+            const stack = {
+              currentImageIdIndex: 0,
+              imageIds: [enabledElement.image.imageId],
+            };
+            cornerstoneTools.addStackStateManager(viewportElement, ['stack']);
+            cornerstoneTools.addToolState(viewportElement, 'stack', stack);
+          }
+
           cornerstone.displayImage(viewportElement, image);
           cornerstone.setViewport(viewportElement, viewport);
           cornerstone.resize(viewportElement, true);
@@ -83,10 +100,17 @@ const CornerstoneViewportDownloadForm = ({ onClose, activeViewportIndex }) => {
     });
 
   const toggleAnnotations = (toggle, viewportElement) => {
-    cornerstoneTools.store.state.tools.forEach(({ name }) => {
-      if (name === 'FreehandRoi3DSculptorTool') {
-        return;
-      }
+    const annotationToolNames = [
+      // 'Brush3DTool',
+      'FreehandRoi3DTool',
+      'XNATLength',
+      'XNATArrowAnnotate',
+      'XNATAngle',
+      'XNATBidirectional',
+      'XNATEllipticalRoi',
+      'XNATRectangleRoi',
+    ];
+    annotationToolNames.forEach(name => {
       if (toggle) {
         cornerstoneTools.setToolEnabledForElement(viewportElement, name);
       } else {
@@ -139,6 +163,7 @@ const CornerstoneViewportDownloadForm = ({ onClose, activeViewportIndex }) => {
       loadImage={loadImage}
       toggleAnnotations={toggleAnnotations}
       downloadBlob={downloadBlob}
+      UINotificationService={UINotificationService}
     />
   );
 };
@@ -146,6 +171,7 @@ const CornerstoneViewportDownloadForm = ({ onClose, activeViewportIndex }) => {
 CornerstoneViewportDownloadForm.propTypes = {
   onClose: PropTypes.func,
   activeViewportIndex: PropTypes.number.isRequired,
+  UINotificationService: PropTypes.object.isRequired,
 };
 
 export default CornerstoneViewportDownloadForm;

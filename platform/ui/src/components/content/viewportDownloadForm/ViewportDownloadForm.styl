@@ -15,16 +15,18 @@
 
   .title
     margin: 0;
-    font-weight: bold;
+    font-weight: normal;
+    font-size: 16px;
 
   .file-info-container
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    margin: 20px 0;
+    margin-bottom: 10px;
     border-radius: 5px;
-    padding: 20px 10px;
+    padding: 15px 10px 0 10px;
     background-color: var(--ui-gray-dark);
+    border: 1px solid var(--text-secondary-color);
 
     @media screen and (max-width: 1023px)
       flex-direction: column;
@@ -85,7 +87,7 @@
         align-items: center;
 
   .loading-image
-    height: 580px;
+    height: 530px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -103,17 +105,18 @@
     border-radius: 5px;
     justify-content: flex-start;
     align-items: center;
-    height: 580px;
+    height: 530px;
+    border: 1px solid var(--text-secondary-color);
 
     .viewport-preview
-      max-height: 512px;
-      max-width: 512px;
+      max-height: 480px;
+      max-width: 480px;
 
     .preview-header
       width: 100%;
       text-align center;
-      font-size: 1.3em;
-      margin: 0 0 10px;
+      font-size: 1.0em;
+      margin: 0 0 5px;
 
   .actions
     display: flex;

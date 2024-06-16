@@ -9,6 +9,7 @@ import RoiMeasurementUnits from './RoiMeasurementUnits';
 import onKeyDownEvent from './onKeyDownEvent';
 import KEY_COMMANDS from './keyCommands';
 import viewportOptionsManager from './ViewportOptionsManager';
+import fetchCSRFToken from './IO/fetchCSRFToken';
 
 export {
   DATA_IMPORT_STATUS,
@@ -22,4 +23,5 @@ export {
   onKeyDownEvent,
   KEY_COMMANDS,
   viewportOptionsManager,
+  fetchCSRFToken,
 };

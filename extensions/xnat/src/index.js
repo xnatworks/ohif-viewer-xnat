@@ -7,6 +7,15 @@ import { version } from '../package.json';
 import { MEASUREMENT_TOOL_NAMES } from './XNATMeasurement';
 import { PEPPERMINT_TOOL_NAMES as ROI_TOOL_NAMES } from './peppermint-tools';
 
+import sessionMap from './utils/sessionMap';
+import { fetchCSRFToken } from './utils';
+
+console.log(
+  '%cXNAT OHIF Viewer%cICR',
+  'background: #0d3c80; padding: 4px; font-weight: bold; color: white',
+  'background: #a71930; padding: 4px; font-weight: bold; color: white'
+);
+
 export default {
   /**
    * Only required property. Should be a unique value across all extensions.
@@ -79,3 +88,5 @@ XNAT_TOOL_NAMES.ALL_ANNOTAION_TOOL_NAMES = [
 ];
 
 export { XNAT_TOOL_NAMES };
+
+export { sessionMap, fetchCSRFToken };

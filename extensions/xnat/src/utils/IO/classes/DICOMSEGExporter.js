@@ -47,7 +47,7 @@ export default class DICOMSEGExporter {
       throw Error(message);
     }
 
-    console.log('PUT succesful');
+    console.log('PUT successful');
 
     return;
   }

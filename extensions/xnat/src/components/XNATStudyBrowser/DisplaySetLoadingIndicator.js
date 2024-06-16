@@ -29,7 +29,7 @@ const DisplaySetLoadingIndicator = props => {
     dataLoadingProgress.loadingStatus
   );
 
-  if (!dataLoadingProgress.hasOwnProperty(loadingStatus)) {
+  if (!dataLoadingProgress.hasOwnProperty('loadingStatus')) {
     return <div />;
   }
 
