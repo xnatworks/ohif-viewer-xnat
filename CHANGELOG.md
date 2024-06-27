@@ -1,3 +1,7 @@
+**3.6.3**
+
+- Fixed image position sync for scans with different slice thickness.
+
 **3.6.2**
 
 - Support 4-D datasets with duplicate InstanceNumber values.

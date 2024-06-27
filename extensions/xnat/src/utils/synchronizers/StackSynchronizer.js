@@ -1,5 +1,6 @@
 import csTools from 'cornerstone-tools';
 import createSynchronizer from './createSynchronizer';
+import stackImagePositionSynchronizer from './stackImagePositionSynchronizer_CSToolsFork';
 
 class StackSynchronizer {
   constructor() {
@@ -59,7 +60,7 @@ class StackSynchronizer {
     if (strategyName === 'Index') {
       handler = csTools.stackImageIndexSynchronizer;
     } else if (strategyName === 'Position') {
-      handler = csTools.stackImagePositionSynchronizer;
+      handler = stackImagePositionSynchronizer;//csTools.stackImagePositionSynchronizer;
     }
 
     this[strategyName] = createSynchronizer('cornerstonenewimage', handler);
