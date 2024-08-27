@@ -2,6 +2,12 @@
 const dotenv = require('dotenv');
 //
 const path = require('path');
+
+// HACK: OpenSSL 3 does not support md4 - "error:0308010C:digital envelope routines::unsupported"
+const crypto = require("crypto");
+const crypto_orig_createHash = crypto.createHash;
+crypto.createHash = algorithm => crypto_orig_createHash(algorithm === "md4" ? "sha256" : algorithm);
+
 const webpack = require('webpack');
 const PACKAGE = require('../platform/viewer/package.json');
 // ~~ RULES
