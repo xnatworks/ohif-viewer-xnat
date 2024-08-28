@@ -41,4 +41,4 @@ export default function onKeyDownEvent(keyCommand) {
 
     refreshViewports();
   }
-};
+}
