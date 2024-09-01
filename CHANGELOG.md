@@ -1,3 +1,8 @@
+**3.7.0**
+
+- Supporting DICOM Microscopy images as per the prerelease notes listed below.
+- Multiple fixes and improvements.
+
 **3.7.0-RC-3**
 
 - Fixed the freehand3DTool becoming unresponsive when deleting a contour while drawing.
