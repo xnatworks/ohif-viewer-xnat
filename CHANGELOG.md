@@ -6,7 +6,6 @@
 **3.7.0-RC-2**
 
 - Upload snapshot images to XNAT session resources.
-- Fixed the image position synchroniser for scans with different slice thickness.
 
 **3.7.0-RC-1**
 
@@ -24,6 +23,10 @@
 **3.7.0-ALPHA-1**
 
 - Integrated dicom-microscopy-viewer v0.45.1.
+
+**3.6.3**
+
+- Fixed the image position synchroniser for scans with different slice thickness.
 
 **3.6.2**
 
