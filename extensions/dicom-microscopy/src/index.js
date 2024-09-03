@@ -1,9 +1,10 @@
 import React from 'react';
 import DicomMicroscopySopClassHandler from './DicomMicroscopySopClassHandler.js';
 import { version } from '../package.json';
+import panelModule from './panelModule';
 
 const Component = React.lazy(() => {
-  return import('./DicomMicroscopyViewport');
+  return import('./ConnectedDicomMicroscopyViewport');
 });
 
 export default {
@@ -24,5 +25,8 @@ export default {
   },
   getSopClassHandlerModule() {
     return DicomMicroscopySopClassHandler;
+  },
+  getPanelModule({ commandsManager, api, servicesManager }) {
+    return panelModule(commandsManager, api, servicesManager);
   },
 };

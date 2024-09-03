@@ -9,9 +9,11 @@ const SidePanel = ({ from, isOpen, children, width }) => {
   const fromSideClass = from === 'right' ? 'from-right' : 'from-left';
 
   // Hide side panels while using VTK
-  const { activeContexts } = useAppContext();
-  const isVTK = activeContexts.includes(CONTEXTS.VTK);
-  if (isVTK) return null;
+  // const { activeContexts } = useAppContext();
+  // const isVTK = activeContexts.includes(CONTEXTS.VTK);
+  // if (isVTK) return null;
+
+  if (!children) return null;
 
   const styles = width
     ? {

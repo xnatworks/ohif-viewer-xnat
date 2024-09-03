@@ -136,11 +136,11 @@ const definitions = {
     context: 'VIEWER',
   },
   xnatRemoveContour: {
-    commandFn: ({ element, toolType, tool }) => {
+    commandFn: ({ element, toolType, data }) => {
       const freehand3DModule = csTools.store.modules.freehand3D;
       const strctureSet = freehand3DModule.getters.structureSet(
-        tool.seriesInstanceUid,
-        tool.structureSetUid
+        data.seriesInstanceUid,
+        data.structureSetUid
       );
 
       if (strctureSet.isLocked) {
@@ -148,7 +148,12 @@ const definitions = {
         return;
       }
 
-      csTools.removeToolState(element, toolType, tool);
+      const tool = csTools.getToolForElement(element, toolType);
+      if (tool._drawing) {
+        tool.cancelDrawing(element);
+      }
+
+      csTools.removeToolState(element, toolType, data);
       refreshCornerstoneViewports();
     },
     storeContexts: [],

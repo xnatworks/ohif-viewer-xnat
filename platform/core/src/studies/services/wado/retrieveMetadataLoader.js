@@ -17,6 +17,7 @@ export default class RetrieveMetadataLoader {
     this.server = server;
     this.studyInstanceUID = studyInstanceUID;
     this.filters = filters;
+    this.loadData = [];
   }
 
   async execLoad() {
@@ -24,6 +25,8 @@ export default class RetrieveMetadataLoader {
     const preLoadData = await this.preLoad();
     const loadData = await this.load(preLoadData);
     const postLoadData = await this.posLoad(loadData);
+
+    this.loadData = loadData;
 
     return postLoadData;
   }

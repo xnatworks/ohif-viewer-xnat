@@ -261,14 +261,18 @@ const commandsModule = ({ servicesManager }) => {
     },
     showDownloadViewportModal: ({ title, viewports }) => {
       const activeViewportIndex = viewports.activeViewportIndex;
-      const { UIModalService } = servicesManager.services;
-      if (UIModalService) {
+      const {
+        UIModalService,
+        UINotificationService,
+      } = servicesManager.services;
+      if (UIModalService && UINotificationService) {
         UIModalService.show({
           content: CornerstoneViewportDownloadForm,
           title,
           contentProps: {
             activeViewportIndex,
             onClose: UIModalService.hide,
+            UINotificationService,
           },
         });
       }

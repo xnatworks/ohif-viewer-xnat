@@ -121,6 +121,9 @@ class XNATStudyLoadingListener {
     studies.forEach(study => {
       study.displaySets.forEach(displaySet => {
         const displaySetInstanceUID = displaySet.displaySetInstanceUID;
+        if (displaySet.isDicomWeb) {
+          return;
+        }
         const imageIds = displaySet.images.map(image => image._data.url);
         displaySet.dataLoadingProgress = {
           loadingStatus: DISPLAY_SET_LOADING_STATUS.NOT_LOADED,

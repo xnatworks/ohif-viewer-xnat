@@ -240,6 +240,10 @@ export default class XNATMeasurementPanel extends React.Component {
       selectedKey,
     } = this.state;
 
+    if (!seriesCollection) {
+      return <div />;
+    }
+
     const { viewports, activeIndex } = this.props;
 
     let exportDisabledMessage;

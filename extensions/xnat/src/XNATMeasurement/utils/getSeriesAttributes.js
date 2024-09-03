@@ -14,6 +14,10 @@ const getSeriesAttributes = displaySetInstanceUID => {
     for (let j = 0; j < displaySets.length; j++) {
       const displaySet = displaySets[j];
 
+      if (displaySet.images === undefined) {
+        continue;
+      }
+
       if (displaySet.displaySetInstanceUID === displaySetInstanceUID) {
         imageId = displaySet.images[0].getImageId();
         break;

@@ -247,8 +247,8 @@ class ToolbarRow extends Component {
       this.state.activeButtons
     );
 
-    const showLayoutButton = this.props.activeContexts.includes(
-      'ACTIVE_VIEWPORT::CORNERSTONE'
+    const showLayoutButton = !this.props.activeContexts.includes(
+      'ACTIVE_VIEWPORT::VTK'
     );
 
     const onPress = (side, value) => {
@@ -485,7 +485,7 @@ function _handleBuiltIn(button) {
 
   if (options.behavior === 'DOWNLOAD_SCREEN_SHOT') {
     commandsManager.runCommand('showDownloadViewportModal', {
-      title: t('Download High Quality Image'),
+      title: t('Download Snapshot Image'),
     });
   }
 }

@@ -42,7 +42,7 @@ function handleContourContextMenu(event, callbackData) {
         commandsManager.runCommand('xnatRemoveContour', {
           element,
           toolType: callbackData.nearbyToolData.toolType,
-          tool: callbackData.nearbyToolData.tool,
+          data: callbackData.nearbyToolData.tool,
         });
       },
       onCopy: () => {

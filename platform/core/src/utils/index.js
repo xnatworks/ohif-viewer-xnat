@@ -20,6 +20,7 @@ import * as hierarchicalListUtils from './hierarchicalListUtils';
 import * as progressTrackingUtils from './progressTrackingUtils';
 import xhrRetryRequestHook from './xhrRetryRequestHook';
 import metadataUtils from './metadataProvider';
+import computeRotation from './computeRotation';
 
 const utils = {
   guid,
@@ -44,6 +45,8 @@ const utils = {
   progressTrackingUtils,
   xhrRetryRequestHook,
   metadataUtils,
+  //
+  computeRotation,
 };
 
 export {

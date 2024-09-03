@@ -4,9 +4,11 @@ import React, {
   useEffect,
   useState,
   createRef,
+  useMemo,
 } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import { sessionMap, fetchCSRFToken } from '@xnat-ohif/extension-xnat';
 
 import './ViewportDownloadForm.styl';
 import { TextInput, Select, Icon } from '@ohif/ui';
@@ -23,8 +25,8 @@ const FILE_TYPE_OPTIONS = [
   },
 ];
 
-const DEFAULT_FILENAME = 'image';
-const REFRESH_VIEWPORT_TIMEOUT = 1000;
+const REFRESH_VIEWPORT_TIMEOUT = 500;
+const XNAT_RESOURCES_FOLDER = 'ViewerSnapshots';
 
 const ViewportDownloadForm = ({
   activeViewport,
@@ -35,12 +37,50 @@ const ViewportDownloadForm = ({
   toggleAnnotations,
   loadImage,
   downloadBlob,
+  UINotificationService,
   defaultSize,
   minimumSize,
   maximumSize,
   canvasClass,
 }) => {
   const [t] = useTranslation('ViewportDownloadForm');
+
+  const { DEFAULT_FILENAME, xnatScan } = useMemo(() => {
+    let label;
+    let xnatScan;
+    try {
+      const enabledElement = cornerstone.getEnabledElement(activeViewport);
+      const imageId = enabledElement.image.imageId;
+      const metadata = cornerstone.metaData.get('instance', imageId);
+      const {
+        SeriesNumber,
+        SeriesInstanceUID,
+        InstanceNumber,
+        SOPInstanceUID,
+      } = metadata;
+
+      const seriesLabel =
+        SeriesNumber !== undefined ? `ser-${SeriesNumber}` : 'ser-UNK';
+      let instanceLabel;
+      if (InstanceNumber !== undefined) {
+        instanceLabel = `inst-${InstanceNumber}`;
+      } else if (SOPInstanceUID !== undefined) {
+        instanceLabel = `inst-${SOPInstanceUID}`;
+      } else {
+        instanceLabel = 'inst-UNK';
+      }
+
+      label = `${seriesLabel}_${instanceLabel}`;
+
+      if (sessionMap.hasCreatePermission()) {
+        xnatScan = sessionMap.getScan(SeriesInstanceUID);
+      }
+    } catch (e) {
+      label = 'image';
+    }
+
+    return { DEFAULT_FILENAME: label, xnatScan };
+  }, [activeViewport]);
 
   const [filename, setFilename] = useState(DEFAULT_FILENAME);
   const [fileType, setFileType] = useState('jpg');
@@ -82,6 +122,8 @@ const ViewportDownloadForm = ({
     filename: false,
   });
 
+  const [isUploadingToXnat, setUploadingToXnat] = useState(false);
+
   const hasError = Object.values(error).includes(true);
 
   const refreshViewport = useRef(null);
@@ -93,6 +135,48 @@ const ViewportDownloadForm = ({
       viewportElement,
       downloadCanvas.ref.current
     );
+  };
+
+  const uploadToXnat = async () => {
+    setUploadingToXnat(true);
+
+    const csrfToken = await fetchCSRFToken();
+    const csrfTokenParameter = `XNAT_CSRF=${csrfToken}`;
+    const rootUrl = sessionMap.xnatRootUrl;
+
+    createXnatResourcesFolder(rootUrl, xnatScan, csrfTokenParameter)
+      .then(() => {
+        return new Promise(resolve =>
+          viewportElement.querySelector('canvas').toBlob(resolve)
+        );
+      })
+      .then(blob => {
+        return uploadSnapshotResourcesFile(
+          rootUrl,
+          xnatScan,
+          csrfTokenParameter,
+          blob,
+          filename
+        );
+      })
+      .then(() => {
+        UINotificationService.show({
+          title: 'Snapshot upload',
+          message: 'Snapshot was successfully uploaded to XNAT.',
+          type: 'info',
+        });
+      })
+      .catch(err => {
+        const message = err.message || 'Unknown error.';
+        UINotificationService.show({
+          title: 'Error uploading snapshot',
+          message: message,
+          type: 'error',
+        });
+      })
+      .finally(() => {
+        setUploadingToXnat(false);
+      });
   };
 
   /**
@@ -200,17 +284,17 @@ const ViewportDownloadForm = ({
       height: validSize(viewportElementHeight),
     }));
   }, [
+    // loadImage,
     activeViewport,
     viewportElement,
+    dimensions.width,
+    dimensions.height,
+    // toggleAnnotations,
     showAnnotations,
-    loadImage,
-    toggleAnnotations,
-    updateViewportPreview,
-    fileType,
+    validSize,
+    // updateViewportPreview,
     downloadCanvas.ref,
-    minimumSize,
-    maximumSize,
-    viewportElementDimensions,
+    fileType,
   ]);
 
   useEffect(() => {
@@ -219,7 +303,7 @@ const ViewportDownloadForm = ({
     return () => {
       disableViewport(viewportElement);
     };
-  }, [disableViewport, enableViewport, viewportElement]);
+  }, [viewportElement]);
 
   useEffect(() => {
     if (refreshViewport.current !== null) {
@@ -235,13 +319,14 @@ const ViewportDownloadForm = ({
     viewportElement,
     showAnnotations,
     dimensions,
-    loadImage,
-    toggleAnnotations,
-    updateViewportPreview,
+    // loadImage,
+    // toggleAnnotations,
+    // updateViewportPreview,
     fileType,
     downloadCanvas.ref,
     minimumSize,
     maximumSize,
+    // loadAndUpdateViewports,
   ]);
 
   useEffect(() => {
@@ -257,7 +342,7 @@ const ViewportDownloadForm = ({
 
   return (
     <div className="ViewportDownloadForm">
-      <div className="title">{t('formTitle')}</div>
+      {/*<div className="title">{t('formTitle')}</div>*/}
 
       <div className="file-info-container" data-cy="file-info-container">
         <div className="dimension-wrapper">
@@ -407,6 +492,24 @@ const ViewportDownloadForm = ({
             {t('Buttons:Download')}
           </button>
         </div>
+        <div className="action-save">
+          <button
+            disabled={hasError || isUploadingToXnat || xnatScan === undefined}
+            onClick={uploadToXnat}
+            className="btn btn-primary"
+            data-cy="download-btn"
+            title="Upload to the Session's 'ViewerSnapshots' Resource"
+          >
+            {isUploadingToXnat ? (
+              <span>
+                <Icon name="circle-notch" className="icon-spin" />
+                <span style={{ marginLeft: 5 }}>Uploading</span>
+              </span>
+            ) : (
+              <span>Upload to XNAT</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -421,11 +524,79 @@ ViewportDownloadForm.propTypes = {
   toggleAnnotations: PropTypes.func.isRequired,
   loadImage: PropTypes.func.isRequired,
   downloadBlob: PropTypes.func.isRequired,
+  UINotificationService: PropTypes.object.isRequired,
   /** A default width & height, between the minimum and maximum size */
   defaultSize: PropTypes.number.isRequired,
   minimumSize: PropTypes.number.isRequired,
   maximumSize: PropTypes.number.isRequired,
   canvasClass: PropTypes.string.isRequired,
+};
+
+const createXnatResourcesFolder = async (
+  rootUrl,
+  xnatScan,
+  csrfTokenParameter
+) => {
+  return new Promise((resolve, reject) => {
+    const { experimentId } = xnatScan;
+    if (!experimentId) {
+      return reject(new Error('Unable to identify Experiment ID'));
+    }
+
+    let url = `${rootUrl}data/experiments/${experimentId}/`;
+    url += `resources/${XNAT_RESOURCES_FOLDER}?${csrfTokenParameter}`;
+    const xhr = new XMLHttpRequest();
+
+    xhr.onload = () => {
+      // 409 means that the resources folder exists
+      if (xhr.status === 200 || xhr.status === 201 || xhr.status === 409) {
+        resolve();
+      } else {
+        reject(xhr.responseText || xhr.statusText);
+      }
+    };
+
+    xhr.onerror = () => {
+      console.log(`Request returned, status: ${xhr.status}`);
+      reject(xhr.responseText || xhr.statusText);
+    };
+
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({}));
+  });
+};
+
+const uploadSnapshotResourcesFile = (rootUrl, xnatScan, csrfTokenParameter, blob, filename) => {
+  return new Promise((resolve, reject) => {
+    const { experimentId } = xnatScan;
+    if (!experimentId) {
+      return reject(new Error('Unable to identify Experiment ID'));
+    }
+
+    let url = `${rootUrl}data/experiments/${experimentId}/`;
+    url += `resources/${XNAT_RESOURCES_FOLDER}/files/${filename}.png`;
+    url += `?${csrfTokenParameter}&overwrite=true`;
+    const xhr = new XMLHttpRequest();
+
+    xhr.onload = () => {
+      // 409 means that the resources folder exists
+      if (xhr.status === 200 || xhr.status === 201) {
+        resolve();
+      } else {
+        reject(xhr.responseText || xhr.statusText);
+      }
+    };
+
+    xhr.onerror = () => {
+      console.log(`Request returned, status: ${xhr.status}`);
+      reject(xhr.responseText || xhr.statusText);
+    };
+
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', 'image/png');
+    xhr.send(blob);
+  });
 };
 
 export default ViewportDownloadForm;

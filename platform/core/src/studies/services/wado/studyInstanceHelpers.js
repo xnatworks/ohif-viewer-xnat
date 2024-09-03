@@ -139,6 +139,7 @@ async function makeSOPInstance(server, study, instance) {
 
   const sopInstance = {
     metadata: naturalizedInstance,
+    srcMetadata: instance,
     baseWadoRsUri,
     wadouri,
     wadorsuri,

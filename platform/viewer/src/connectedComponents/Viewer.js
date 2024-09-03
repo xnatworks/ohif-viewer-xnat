@@ -19,7 +19,7 @@ import dcmjs from 'dcmjs';
 // Contexts
 import WhiteLabelingContext from '../context/WhiteLabelingContext.js';
 import UserManagerContext from '../context/UserManagerContext';
-import AppContext from '../context/AppContext';
+import AppContext, { withAppContext } from '../context/AppContext';
 
 import './Viewer.css';
 import csTools from 'cornerstone-tools';
@@ -254,18 +254,42 @@ class Viewer extends Component {
   }
 
   render() {
-    let VisiblePanelLeft, VisiblePanelRight;
+    const { activeContexts, viewports, activeViewportIndex } = this.props;
     const panelExtensions = extensionManager.modules[MODULE_TYPES.PANEL];
+    const activePanelExtension = _getActivePanelExtension(
+      viewports,
+      activeViewportIndex,
+      panelExtensions
+    );
+    const {
+      selectedLeftSidePanel,
+      selectedRightSidePanel,
+      VisiblePanelLeft,
+      VisiblePanelRight,
+      isStudyBrowserEnabled,
+    } = _getSelectedSidePanels(
+      activePanelExtension,
+      panelExtensions,
+      activeContexts
+    );
 
-    panelExtensions.forEach(panelExt => {
-      panelExt.module.components.forEach(comp => {
-        if (comp.id === this.state.selectedRightSidePanel) {
-          VisiblePanelRight = comp.component;
-        } else if (comp.id === this.state.selectedLeftSidePanel) {
-          VisiblePanelLeft = comp.component;
-        }
-      });
-    });
+    let leftPanel = null;
+    if (VisiblePanelLeft !== undefined) {
+      leftPanel = (
+        <VisiblePanelLeft
+          viewports={this.props.viewports}
+          studies={this.props.studies}
+          activeIndex={this.props.activeViewportIndex}
+        />
+      );
+    } else if (isStudyBrowserEnabled) {
+      leftPanel = (
+        <ConnectedStudyBrowser
+          studies={this.state.thumbnails}
+          studyMetadata={this.props.studies}
+        />
+      );
+    }
 
     return (
       <>
@@ -309,12 +333,12 @@ class Viewer extends Component {
             isRightSidePanelOpen={this.state.isRightSidePanelOpen}
             selectedLeftSidePanel={
               this.state.isLeftSidePanelOpen
-                ? this.state.selectedLeftSidePanel
+                ? selectedLeftSidePanel
                 : ''
             }
             selectedRightSidePanel={
               this.state.isRightSidePanelOpen
-                ? this.state.selectedRightSidePanel
+                ? selectedRightSidePanel
                 : ''
             }
             handleSidePanelChange={(side, selectedPanel) => {
@@ -336,6 +360,10 @@ class Viewer extends Component {
                 updatedState[openKey] = !updatedState[openKey];
               }
 
+              if (activePanelExtension) {
+                activePanelExtension.module[selectedKey] = selectedPanel;
+              }
+
               this.setState(updatedState);
             }}
             studies={this.props.studies}
@@ -351,18 +379,7 @@ class Viewer extends Component {
           {/* LEFT */}
           <ErrorBoundaryDialog context="LeftSidePanel">
             <SidePanel from="left" isOpen={this.state.isLeftSidePanelOpen}>
-              {VisiblePanelLeft ? (
-                <VisiblePanelLeft
-                  viewports={this.props.viewports}
-                  studies={this.props.studies}
-                  activeIndex={this.props.activeViewportIndex}
-                />
-              ) : (
-                <ConnectedStudyBrowser
-                  studies={this.state.thumbnails}
-                  studyMetadata={this.props.studies}
-                />
-              )}
+              {leftPanel}
             </SidePanel>
           </ErrorBoundaryDialog>
 
@@ -400,7 +417,7 @@ class Viewer extends Component {
   }
 }
 
-export default withDialog(Viewer);
+export default withDialog(withAppContext(Viewer));
 
 /**
  * Async function to check if there are any inconsistences in the series.
@@ -668,6 +685,8 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
           SOPInstanceUID = displaySet.images[imageIndex].getData().metadata
             .SOPInstanceUID;
         }
+      } else if (displaySet.thumbnailImageId) {
+        imageId = displaySet.thumbnailImageId;
       } else {
         altImageText = modality;
       }
@@ -706,4 +725,63 @@ const _mapStudiesToThumbnails = function(studies, activeDisplaySetInstanceUID) {
       thumbnails,
     };
   });
+};
+
+const _getActivePanelExtension = (
+  viewports,
+  activeViewportIndex,
+  panelExtensions
+) => {
+  if (!viewports || !viewports[activeViewportIndex]) {
+    return;
+  }
+  const activeViewport = viewports[activeViewportIndex];
+  let pluginId = activeViewport.plugin;
+  if (pluginId === 'cornerstone') {
+    pluginId = 'xnat';
+  }
+  return panelExtensions.find(ext => ext.extensionId === pluginId);
+};
+
+const _getSelectedSidePanels = (
+  activePanelExtension,
+  panelExtensions,
+  activeContexts
+) => {
+  let selectedLeftSidePanel = '';
+  let selectedRightSidePanel = '';
+  let VisiblePanelLeft;
+  let VisiblePanelRight;
+  const isStudyBrowserEnabled = !activeContexts.includes(
+    'ACTIVE_VIEWPORT::VTK'
+  );
+
+  if (activePanelExtension) {
+    selectedLeftSidePanel = activePanelExtension.module.selectedLeftSidePanel;
+    selectedRightSidePanel = activePanelExtension.module.selectedRightSidePanel;
+
+    panelExtensions.forEach(panelExt => {
+      const isActiveExt = panelExt.module.defaultContext.some(ctx =>
+        activeContexts.includes(ctx)
+      );
+      if (!isActiveExt) {
+        return;
+      }
+      panelExt.module.components.forEach(comp => {
+        if (comp.id === selectedLeftSidePanel) {
+          VisiblePanelLeft = comp.component;
+        } else if (comp.id === selectedRightSidePanel) {
+          VisiblePanelRight = comp.component;
+        }
+      });
+    });
+  }
+
+  return {
+    selectedLeftSidePanel,
+    selectedRightSidePanel,
+    VisiblePanelLeft,
+    VisiblePanelRight,
+    isStudyBrowserEnabled,
+  };
 };

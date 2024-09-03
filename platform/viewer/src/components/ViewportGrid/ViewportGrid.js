@@ -59,8 +59,6 @@ const ViewportGrid = function(props) {
         studies,
       };
 
-      // JAMES TODO:
-
       // Use whichever plugin is currently in use in the panel
       // unless nothing is specified. If nothing is specified
       // and the display set has a plugin specified, use that.

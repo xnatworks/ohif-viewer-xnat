@@ -258,13 +258,20 @@ class MetadataProvider {
       return;
     }
 
-    // Attempt to load metadata from instance
-    const qIndex = imageId.indexOf('?frame=');
-    if (qIndex > 0) {
-      imageIdToUse = imageId.substring(0, qIndex);
-      frameIndex = imageId.substring(qIndex + 7); //'?frame='.length;
+    if (imageId.startsWith('wadors:')) {
+      const qIndex = imageId.indexOf('/frames/');
+      if (qIndex > 0) {
+        imageIdToUse = imageId.substring(0, qIndex);
+      }
+    } else {
+      // Attempt to load metadata from instance
+      const qIndex = imageId.indexOf('?frame=');
+      if (qIndex > 0) {
+        imageIdToUse = imageId.substring(0, qIndex);
+        frameIndex = imageId.substring(qIndex + 7); //'?frame='.length;
+      }
+      this.loadMetadataFromImage(imageIdToUse);
     }
-    this.loadMetadataFromImage(imageIdToUse);
 
     instance = this._getInstance(imageId);
     if (!instance) {
