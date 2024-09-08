@@ -927,15 +927,11 @@ const makeDisplaySet = (series, instances) => {
     imageSet.getImage(0).getTagValue('InstanceNumber')
   );
 
-  const displayReconstructableInfo = isDisplaySetReconstructable(instances);
+  const displayReconstructableInfo = isDisplaySetReconstructable(
+    instances,
+    seriesData
+  );
   imageSet.isReconstructable = displayReconstructableInfo.isReconstructable;
-
-  if (is4D) {
-    displayReconstructableInfo.reconstructionIssues.push(
-      ReconstructionIssues.DATASET_4D
-    );
-    imageSet.isReconstructable = false;
-  }
 
   let displaySpacingInfo = undefined;
   if (
@@ -959,6 +955,10 @@ const makeDisplaySet = (series, instances) => {
       // Volumes with gaps later on.
       imageSet.missingFrames = displaySpacingInfo.missingFrames;
     }
+  } else if (imageSet.isReconstructable && imageSet.isEnhanced && !is4D) {
+    imageSet.sliceSpacingFirstFrame = imageSet.calculateEnhancedSliceSpacing(
+      seriesData
+    );
   }
 
   if (displaySpacingInfo) {

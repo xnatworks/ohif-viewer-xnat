@@ -465,7 +465,7 @@ const _checkForSeriesInconsistencesWarnings = async function (displaySet, studie
             inconsistencyWarnings.push('The dataset frames have different irregular spacing.');
             break;
           case ReconstructionIssues.MULTIFRAMES:
-            inconsistencyWarnings.push('The dataset is multi-frame.');
+            inconsistencyWarnings.push('The dataset is unsupported multi-frame.');
             break;
           default:
             break;

@@ -109,7 +109,7 @@ export default class SegmentationMenuListItem extends React.Component {
     let slices = [];
     for (const [key, value] of Object.entries(labelmap3D.labelmaps2D)) {
       if (value.segmentsOnLabelmap.includes(segmentIndex)) {
-        slices.push(key);
+        slices.push(Number(key));
       }
     }
     const midSlice = slices.length
