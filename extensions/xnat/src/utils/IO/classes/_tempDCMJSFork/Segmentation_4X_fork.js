@@ -230,6 +230,8 @@ function _getLabelmapsFromRefernecedFrameIndicies(
 function _createSegFromImages(images, isMultiframe, options) {
   const datasets = [];
 
+  const imageIds = images.map(image => image.imageId);
+
   if (isMultiframe) {
     const image = images[0];
     const arrayBuffer = image.data.byteArray.buffer;
@@ -265,7 +267,7 @@ function _createSegFromImages(images, isMultiframe, options) {
     }
   }
 
-  const multiframe = Normalizer.normalizeToDataset(datasets);
+  const multiframe = Normalizer.normalizeToDataset(datasets, imageIds);
 
   return new SegmentationDerivation([multiframe], options);
 }

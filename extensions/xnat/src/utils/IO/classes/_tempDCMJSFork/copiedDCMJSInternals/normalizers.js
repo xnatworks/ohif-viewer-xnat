@@ -87,7 +87,7 @@ class Normalizer {
         return "No normalization defined";
     }
 
-    static normalizeToDataset(datasets) {
+    static normalizeToDataset(datasets, imageIds) {
         let sopClassUID = Normalizer.consistentSOPClassUIDs(datasets);
         let normalizerClass = Normalizer.normalizerForSOPClassUID(sopClassUID);
 
@@ -96,6 +96,7 @@ class Normalizer {
             return undefined;
         }
         let normalizer = new normalizerClass(datasets);
+        normalizer.imageIds = imageIds;
         normalizer.normalize();
         return normalizer.dataset;
     }
@@ -314,7 +315,7 @@ class ImageNormalizer extends Normalizer {
             return;
         }
 
-        if (!ds.PixelRepresentation) {
+        if (ds.PixelRepresentation === undefined) {
             // Required tag: guess signed
             ds.PixelRepresentation = 1;
         }
@@ -482,8 +483,105 @@ class EnhancedCTImageNormalizer extends ImageNormalizer {
 
 class EnhancedMRImageNormalizer extends ImageNormalizer {
     normalize() {
-        super.normalize();
+        this.convertToMultiframe();
+        this.normalizeMultiframe();
     }
+
+    convertToMultiframe() {
+        this.dataset = this.datasets[0];
+        const ds = this.dataset;
+        const datasets = this.imageIds.map(
+          id => cornerstone.metaData.get('instance', id)
+        );
+        const dataset0 = datasets[0];
+
+        ds.RescaleSlope = dataset0.RescaleSlope || "1";
+        ds.RescaleIntercept = dataset0.RescaleIntercept || "0";
+
+        ds.SharedFunctionalGroupsSequence = {
+            PlaneOrientationSequence: {
+                ImageOrientationPatient: dataset0.ImageOrientationPatient
+            },
+            PixelMeasuresSequence: {
+                PixelSpacing: dataset0.PixelSpacing,
+                SpacingBetweenSlices: dataset0.SpacingBetweenSlices,
+                SliceThickness: dataset0.SpacingBetweenSlices
+            }
+        };
+
+        ds.ReferencedSeriesSequence = {
+            SeriesInstanceUID: dataset0.SeriesInstanceUID,
+            ReferencedInstanceSequence: []
+        };
+
+        // per-frame
+        ds.PerFrameFunctionalGroupsSequence = [];
+        datasets.forEach(dataset => {
+            ds.PerFrameFunctionalGroupsSequence.push({
+                PlanePositionSequence: {
+                    ImagePositionPatient: dataset.ImagePositionPatient
+                },
+                FrameVOILUTSequence: {
+                    WindowCenter: dataset.WindowCenter,
+                    WindowWidth: dataset.WindowWidth
+                }
+            });
+
+            ds.ReferencedSeriesSequence.ReferencedInstanceSequence.push({
+                ReferencedSOPClassUID: dataset.SOPClassUID,
+                ReferencedSOPInstanceUID: ds.SOPInstanceUID
+            });
+        });
+
+        let dimensionUID = DicomMetaDictionary.uid();
+        ds.DimensionOrganizationSequence = {
+            DimensionOrganizationUID: dimensionUID
+        };
+        ds.DimensionIndexSequence = [
+            {
+                DimensionOrganizationUID: dimensionUID,
+                DimensionIndexPointer: 2097202,
+                FunctionalGroupPointer: 2134291, // PlanePositionSequence
+                DimensionDescriptionLabel: "ImagePositionPatient"
+            }
+        ];
+
+        // Validation
+        if (!ds.StudyID || ds.StudyID === "") {
+            // Required tag: fill in if needed
+            ds.StudyID = "No Study ID";
+        }
+
+        let validLateralities = ["R", "L"];
+        if (validLateralities.indexOf(ds.Laterality) === -1) {
+            delete ds.Laterality;
+        }
+
+        if (!ds.PresentationLUTShape) {
+            ds.PresentationLUTShape = "IDENTITY";
+        }
+
+        if (ds.BodyPartExamined === "PROSTATE") {
+            ds.SharedFunctionalGroupsSequence.FrameAnatomySequence = {
+                AnatomicRegionSequence: {
+                    CodeValue: "T-9200B",
+                    CodingSchemeDesignator: "SRT",
+                    CodeMeaning: "Prostate"
+                },
+                FrameLaterality: "U"
+            };
+        }
+
+        let rescaleIntercept = ds.RescaleIntercept || 0;
+        let rescaleSlope = ds.RescaleSlope || 1;
+        ds.SharedFunctionalGroupsSequence.PixelValueTransformationSequence = {
+            RescaleIntercept: rescaleIntercept,
+            RescaleSlope: rescaleSlope,
+            RescaleType: "US"
+        };
+    }
+
+    normalizeMultiframe() {}
 }
 
 class EnhancedUSVolumeNormalizer extends ImageNormalizer {
