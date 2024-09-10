@@ -1,3 +1,11 @@
+**3.7.1**
+
+- Improved the processing of the Enhanced MR images so that it becomes possible to:
+  - detect irregular spacing and missing frames,
+  - calculate the volume of contour and mask ROIs, and
+  - jump to frames relevant to an ROI.
+- Fixed the import and export of masks with Enhanced MR as a reference dataset.
+
 **3.7.0**
 
 - Supporting DICOM Microscopy images as per the prerelease notes listed below.
