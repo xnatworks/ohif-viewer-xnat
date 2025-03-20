@@ -56,6 +56,19 @@ const getWindowing = enabledElementUuid => {
 
 export { setWindowing, getWindowing };
 
+/**
+ * firstImageId to displaySet map
+ */
+const firstImageIdToDisplaySet = new Map();
+
+const setDisplaySetForFirstImageId = (imageId, displaySet) => {
+  firstImageIdToDisplaySet.set(imageId, displaySet);
+};
+
+const getDisplaySetForFirstImageId = imageId => {
+  return firstImageIdToDisplaySet.get(imageId);
+};
+
 const state = {
   // Elements state
   setEnabledElement,
@@ -69,6 +82,9 @@ const state = {
   // Windowing state
   setWindowing,
   getWindowing,
+  // FirstImageId to displaySet map
+  setDisplaySetForFirstImageId,
+  getDisplaySetForFirstImageId,
 };
 
 export default state;

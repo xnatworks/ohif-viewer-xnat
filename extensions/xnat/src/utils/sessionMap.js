@@ -25,6 +25,9 @@ const _map = {
     SEG: [],
     MEAS: [],
   },
+  viewerSettings: {
+    multistack: false,
+  },
 };
 
 const sessionMap = {
@@ -280,6 +283,16 @@ const sessionMap = {
       colorHex: '#000000',
     };
     return [empty, ...preset];
+  },
+  setViewerSettings: settings => {
+    const defaultSettings = _map.viewerSettings;
+    _map.viewerSettings = {
+      ...defaultSettings,
+      ...settings,
+    };
+  },
+  getViewerSettings: () => {
+    return _map.viewerSettings;
   },
 
   setPermissions: permissions => {

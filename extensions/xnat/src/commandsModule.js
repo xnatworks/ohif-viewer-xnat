@@ -7,7 +7,7 @@ import queryRoiColorList from './utils/IO/queryRoiColorList';
 import queryRoiPresets from './utils/IO/queryRoiPresets';
 import { XNATStudyLoadingListener } from './utils/StudyLoadingListener/XNATStudyLoadingListener';
 import { onKeyDownEvent, KEY_COMMANDS } from './utils';
-import { triggerSegmentCompletedEvent } from './peppermint-tools';
+import { triggerSegmentCompletedEvent, PEPPERMINT_TOOL_NAMES } from './peppermint-tools';
 
 const refreshCornerstoneViewports = () => {
   cornerstone.getEnabledElements().forEach(enabledElement => {
@@ -77,6 +77,19 @@ const definitions = {
     },
     storeContexts: [],
     options: { url: null },
+    context: 'VIEWER',
+  },
+  xnatSetViewerSettings: {
+    commandFn: ({ viewerSettings }) =>
+      sessionMap.setViewerSettings(viewerSettings || {}),
+    storeContexts: [],
+    options: { viewerSettings: {} },
+    context: 'VIEWER',
+  },
+  xnatGetViewerSettings: {
+    commandFn: () => sessionMap.getViewerSettings(),
+    storeContexts: [],
+    options: {},
     context: 'VIEWER',
   },
   xnatSetView: {
@@ -151,6 +164,14 @@ const definitions = {
       const tool = csTools.getToolForElement(element, toolType);
       if (tool._drawing) {
         tool.cancelDrawing(element);
+      }
+
+      const freehand_tool = csTools.getToolForElement(
+        element,
+        PEPPERMINT_TOOL_NAMES.FREEHAND_ROI_3D_SCULPTOR_TOOL
+      );
+      if (freehand_tool && freehand_tool.mode === 'active') {
+        freehand_tool.configuration.currentTool = null;
       }
 
       csTools.removeToolState(element, toolType, data);

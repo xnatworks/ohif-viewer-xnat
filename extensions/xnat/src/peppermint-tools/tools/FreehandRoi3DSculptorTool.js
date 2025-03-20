@@ -49,7 +49,7 @@ export default class FreehandRoi3DSculptorTool extends FreehandRoiSculptorTool {
       eventData
     );
 
-    if (closestToolIndex === undefined) {
+    if (closestToolIndex === undefined || closestToolIndex === null) {
       return;
     }
 

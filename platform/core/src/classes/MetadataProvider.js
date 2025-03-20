@@ -365,6 +365,9 @@ class MetadataProvider {
         let ImageOrientationPatient;
         let ImagePositionPatient;
 
+        ImageOrientationPatient = instance.ImageOrientationPatient;
+        ImagePositionPatient = instance.ImagePositionPatient;
+
         if (instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.20') {
           // NM modality
           const planeinfo = getImagePlaneInformation(
@@ -376,9 +379,18 @@ class MetadataProvider {
         } else if (instance.Modality === 'US') {
           ImageOrientationPatient = instance.ImageOrientationPatient || [1, 0, 0, 0, 1, 0];
           ImagePositionPatient = instance.ImagePositionPatient || [0, 0, 0];
-        } else {
-          ImageOrientationPatient = instance.ImageOrientationPatient;
-          ImagePositionPatient = instance.ImagePositionPatient;
+        } else if (instance.NumberOfFrames > 1 && frameIndex !== undefined) {
+          const pfgs = instance.PerFrameFunctionalGroupsSequence;
+          if (pfgs && pfgs[frameIndex]) {
+            const pos = pfgs[frameIndex].PlaneOrientationSequence;
+            if (Array.isArray(pos) && pos.length > 0) {
+              ImageOrientationPatient = pos[0].ImageOrientationPatient;
+            }
+            const pps = pfgs[frameIndex].PlanePositionSequence;
+            if (Array.isArray(pps) && pps.length > 0) {
+              ImagePositionPatient = pps[0].ImagePositionPatient;
+            }
+          }
         }
 
         if (
@@ -393,25 +405,44 @@ class MetadataProvider {
           hasInvalidData = true;
         }
 
+        let sliceThickness = instance.SliceThickness;
+
         // Fallback for DX images.
         // TODO: We should use the rest of the results of this function
         // to update the UI somehow
-        let { PixelSpacing } = getPixelSpacingInformation(instance);
-        if (PixelSpacing) {
-          if (!Array.isArray(PixelSpacing)) {
-            PixelSpacing = [PixelSpacing, PixelSpacing];
+        let { PixelSpacing: pixelSpacing } = getPixelSpacingInformation(
+          instance
+        );
+        if (!pixelSpacing) {
+          if (instance.NumberOfFrames > 1 && frameIndex !== undefined) {
+            const pfgs = instance.PerFrameFunctionalGroupsSequence;
+            if (pfgs && pfgs[frameIndex]) {
+              const pms = pfgs[frameIndex].PixelMeasuresSequence;
+              if (Array.isArray(pms) && pms.length > 0) {
+                pixelSpacing = pms[0].PixelSpacing;
+                if (sliceThickness === undefined) {
+                  sliceThickness = pms[0].SliceThickness;
+                }
+              }
+            }
+          }
+        }
+
+        if (pixelSpacing) {
+          if (!Array.isArray(pixelSpacing)) {
+            pixelSpacing = [pixelSpacing, pixelSpacing];
             hasInvalidData = true;
           }
-          const isZeroXSpacing = Math.abs(PixelSpacing[0]) < 0.001;
-          const isZeroYSpacing = Math.abs(PixelSpacing[1]) < 0.001;
+          const isZeroXSpacing = Math.abs(pixelSpacing[0]) < 0.001;
+          const isZeroYSpacing = Math.abs(pixelSpacing[1]) < 0.001;
           if (isZeroXSpacing && isZeroYSpacing) {
-            PixelSpacing = [1.0, 1.0];
+            pixelSpacing = [1.0, 1.0];
             hasInvalidData = true;
           } else if (isZeroXSpacing) {
-            PixelSpacing[0] = PixelSpacing[1];
+            pixelSpacing[0] = pixelSpacing[1];
             hasInvalidData = true;
           } else if (isZeroYSpacing) {
-            PixelSpacing[1] = PixelSpacing[0];
+            pixelSpacing[1] = pixelSpacing[0];
             hasInvalidData = true;
           }
         }
@@ -426,8 +457,8 @@ class MetadataProvider {
             ImagePositionPatient = [0, 0, 0];
           }
           */
-          if (!PixelSpacing) {
-            PixelSpacing = instance.NominalScannedPixelSpacing || [1.0, 1.0];
+          if (!pixelSpacing) {
+            pixelSpacing = instance.NominalScannedPixelSpacing || [1.0, 1.0];
           }
         }
 
@@ -437,9 +468,9 @@ class MetadataProvider {
         let rowCosines;
         let columnCosines;
 
-        if (PixelSpacing) {
-          rowPixelSpacing = PixelSpacing[0];
-          columnPixelSpacing = PixelSpacing[1];
+        if (pixelSpacing) {
+          rowPixelSpacing = pixelSpacing[0];
+          columnPixelSpacing = pixelSpacing[1];
         }
 
         if (ImageOrientationPatient) {
@@ -455,9 +486,9 @@ class MetadataProvider {
           rowCosines,
           columnCosines,
           imagePositionPatient: ImagePositionPatient,
-          sliceThickness: instance.SliceThickness,
+          sliceThickness,
           sliceLocation: instance.SliceLocation,
-          pixelSpacing: PixelSpacing,
+          pixelSpacing,
           rowPixelSpacing,
           columnPixelSpacing,
           warnings: hasInvalidData ? 'Invalid image position/spacing.' : '',

@@ -489,6 +489,9 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
 
     convertToMultiframe() {
         this.dataset = this.datasets[0];
+
+        /*
+        this.dataset = this.datasets[0];
         const ds = this.dataset;
         const datasets = this.imageIds.map(
           id => cornerstone.metaData.get('instance', id)
@@ -579,6 +582,7 @@ class EnhancedMRImageNormalizer extends ImageNormalizer {
             RescaleSlope: rescaleSlope,
             RescaleType: "US"
         };
+     */
     }
 
     normalizeMultiframe() {}
