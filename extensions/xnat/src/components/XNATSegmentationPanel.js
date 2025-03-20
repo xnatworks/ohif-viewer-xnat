@@ -14,7 +14,7 @@ import XNATSegmentationExportMenu from './XNATSegmentationExportMenu/XNATSegment
 import XNATSegmentationImportMenu from './XNATSegmentationImportMenu/XNATSegmentationImportMenu';
 import XNATSegmentationSettings from './XNATSegmentationSettings/XNATSegmentationSettings';
 import getElementFromFirstImageId from '../utils/getElementFromFirstImageId';
-import { utils } from '@ohif/core';
+import { utils, OHIF } from '@ohif/core';
 import { Icon } from '@ohif/ui';
 import MaskRoiPropertyModal from './XNATSegmentationMenu/MaskRoiPropertyModal.js';
 import showModal from './common/showModal.js';
@@ -24,6 +24,8 @@ import SegmentationStatsMenu from './XNATSegmentationMenu/SegmentationStatsMenu'
 import sessionMap from '../utils/sessionMap';
 
 import './XNATRoiPanel.styl';
+
+const { ReconstructionIssues } = OHIF;
 
 const SUPPORTED_EXPORT_MODALITIES = ['CT', 'MR', 'PT', 'US'];
 
@@ -119,6 +121,16 @@ export default class XNATSegmentationPanel extends React.Component {
       labelmap3D = segmentList.labelmap3D;
     }
 
+    const { Modality, reconstructionIssues } = viewports[activeIndex];
+    const {
+      importDisabledMessage,
+      exportDisabledMessage,
+    } = this.checkImportExport({
+      labelmap3D,
+      Modality,
+      reconstructionIssues,
+    });
+
     this.state = {
       importMetadata,
       segments,
@@ -129,6 +141,8 @@ export default class XNATSegmentationPanel extends React.Component {
       showSegmentationSettings: false,
       labelmap3D,
       show2DStats: false,
+      importDisabledMessage,
+      exportDisabledMessage,
     };
 
     this.addEventListeners();
@@ -188,6 +202,17 @@ export default class XNATSegmentationPanel extends React.Component {
       labelmap3D = segmentList.labelmap3D;
     }
 
+    const { viewports, activeIndex } = this.props;
+    const { Modality, reconstructionIssues } = viewports[activeIndex];
+    const {
+      importDisabledMessage,
+      exportDisabledMessage,
+    } = this.checkImportExport({
+      labelmap3D,
+      Modality,
+      reconstructionIssues,
+    });
+
     this.setState({
       importMetadata,
       segments,
@@ -196,7 +221,42 @@ export default class XNATSegmentationPanel extends React.Component {
       importing: false,
       exporting: false,
       labelmap3D,
+      importDisabledMessage,
+      exportDisabledMessage,
     });
+  }
+
+  checkImportExport({ labelmap3D, Modality, reconstructionIssues }) {
+    let exportDisabledMessage;
+    let importDisabledMessage;
+
+    let isFractional = false;
+    if (labelmap3D) {
+      isFractional = labelmap3D.isFractional;
+    }
+    if (isFractional) {
+      exportDisabledMessage =
+        'Exporting fractional segmentation is not supported yet.';
+    } else if (!SUPPORTED_EXPORT_MODALITIES.includes(Modality)) {
+      exportDisabledMessage =
+        'Segmentation export is not supported for this modality.';
+    } else if (!sessionMap.hasCreatePermission()) {
+      exportDisabledMessage = 'Segmentation export is not permitted.';
+    } else if (Array.isArray(reconstructionIssues)) {
+      if (
+        reconstructionIssues.includes(
+          ReconstructionIssues.VARYING_IMAGESORIENTATION
+        )
+      ) {
+        importDisabledMessage = exportDisabledMessage =
+          'The dataset frames have different orientation.';
+      }
+    }
+
+    return {
+      importDisabledMessage,
+      exportDisabledMessage,
+    };
   }
 
   componentDidUpdate() {
@@ -580,6 +640,8 @@ export default class XNATSegmentationPanel extends React.Component {
       firstImageId,
       labelmap3D,
       show2DStats,
+      importDisabledMessage,
+      exportDisabledMessage,
     } = this.state;
 
     const { viewports, activeIndex, showColorSelectModal } = this.props;
@@ -590,17 +652,6 @@ export default class XNATSegmentationPanel extends React.Component {
 
     if (labelmap3D) {
       isFractional = labelmap3D.isFractional;
-    }
-
-    let exportDisabledMessage;
-    if (isFractional) {
-      exportDisabledMessage =
-        'Exporting fractional segmentation is not supported yet.';
-    } else if (!SUPPORTED_EXPORT_MODALITIES.includes(Modality)) {
-      exportDisabledMessage =
-        'Segmentation export is not supported for this modality.';
-    } else if (!sessionMap.hasCreatePermission()) {
-      exportDisabledMessage = 'Segmentation export is not permitted.';
     }
 
     const addSegmentButton = isFractional ? null : (
@@ -664,6 +715,7 @@ export default class XNATSegmentationPanel extends React.Component {
               ExportCallbackOrComponent={XNATSegmentationExportMenu}
               onImportButtonClick={() => this.setState({ importing: true })}
               onExportButtonClick={() => this.setState({ exporting: true })}
+              importDisabledMessage={importDisabledMessage}
               exportDisabledMessage={exportDisabledMessage}
             />
           </div>
