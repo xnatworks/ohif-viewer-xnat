@@ -882,14 +882,9 @@ const makeDisplaySet = (series, instances) => {
   const seriesData = series.getData();
 
   const _isMultiFrame = isMultiFrame(instance);
-  let firstImageId = instance._data.url;
-  if (_isMultiFrame) {
-    firstImageId += '?frame=0';
-  }
 
   // set appropriate attributes to image set...
   imageSet.setAttributes({
-    firstImageId,
     displaySetInstanceUID: imageSet.uid, // create a local alias for the imageSet UID
     SeriesDate: seriesData.SeriesDate,
     SeriesTime: seriesData.SeriesTime,
@@ -987,6 +982,12 @@ const makeDisplaySet = (series, instances) => {
   imageSet.setAttribute('middleImageIndex', middleImageIndex);
   imageSet.setAttribute('firstShow', displayFromTheMiddleEnabled);
 
+  let firstImageId = imageSet.images[0]._data.url;
+  if (_isMultiFrame) {
+    firstImageId += '?frame=0';
+  }
+  imageSet.setAttribute('firstImageId', firstImageId);
+
   return imageSet;
 };
 
@@ -996,11 +997,9 @@ const makeDisplaySetFromSubStack = (subStack, refDisplaySet) => {
   const instance = instances[0];
   const imageSet = new ImageSet(instances);
   const seriesData = series.getData();
-  const firstImageId = instance._data.url;
 
   // set appropriate attributes to image set...
   imageSet.setAttributes({
-    firstImageId,
     displaySetInstanceUID: imageSet.uid, // create a local alias for the imageSet UID
     SeriesDate: seriesData.SeriesDate,
     SeriesTime: seriesData.SeriesTime,
@@ -1037,6 +1036,9 @@ const makeDisplaySetFromSubStack = (subStack, refDisplaySet) => {
   imageSet.setAttribute('firstShow', displayFromTheMiddleEnabled);
 
   imageSet.sliceSpacingFirstFrame = imageSet.calculateSubStackSliceSpacing();
+
+  const firstImageId = instance._data.url;
+  imageSet.setAttribute('firstImageId', firstImageId);
 
   return imageSet;
 };
