@@ -77,6 +77,10 @@ export default class MaskImporter {
   importDICOMSEG(dicomSegArrayBuffer) {
     return new Promise((resolve, reject) => {
       const imageIds = this._imageIds;
+      const numberOfFrames = cornerstone.metaData.get(
+        'NumberOfFrames',
+        imageIds[0]
+      );
       const imagePromises = [];
 
       const numImages = imageIds.length;
@@ -97,6 +101,15 @@ export default class MaskImporter {
       }
 
       Promise.all(imagePromises).then(() => {
+        let imageIdsForToolState = [];
+        if (numberOfFrames > 1) {
+          for (let i = 0; i < numberOfFrames; i++) {
+            imageIdsForToolState.push(`${imageIds[0]}?frame=${i}`);
+          }
+        } else {
+          imageIdsForToolState = [...imageIds];
+        }
+
         try {
           const {
             labelmapBuffer,
@@ -105,12 +118,12 @@ export default class MaskImporter {
             isFractional,
             segmentsOnFrame,
           } = Segmentation_4X_fork.generateToolState(
-            imageIds,
+            imageIdsForToolState,
             dicomSegArrayBuffer,
             cornerstone.metaData
           );
 
-          const firstImageId = imageIds[0];
+          const firstImageId = imageIdsForToolState[0];
 
           // Delete old labelmap
           if (segmentationModule.state.series[firstImageId]) {
@@ -124,7 +137,10 @@ export default class MaskImporter {
           const {
             rowPixelSpacing,
             columnPixelSpacing,
-          } = cornerstone.metaData.get('imagePlaneModule', firstImageId);
+          } = cornerstone.metaData.get(
+            'imagePlaneModule',
+            imageIdsForToolState[0]
+          );
           const voxelScaling =
             (columnPixelSpacing || 1) *
             (rowPixelSpacing || 1) *
@@ -174,7 +190,7 @@ export default class MaskImporter {
               labelmapBuffer,
               0,
               metadata,
-              imageIds.length,
+              imageIdsForToolState.length,
               segmentsOnFrame
               // TODO -> Can define a color LUT based on colors in the SEG later.
             );

@@ -8,16 +8,21 @@ import LockedCollectionsList from './XNATContourMenu/LockedCollectionsList.js';
 import ContourPanelSettings from './XNATContourMenu/ContourPanelSettings.js';
 import unlockStructureSet from '../utils/unlockStructureSet.js';
 import onIOCancel from './common/helpers/onIOCancel.js';
-import getSeriesInstanceUidFromViewport from '../utils/getSeriesInstanceUidFromViewport';
 import XNATContourExportMenu from './XNATContourExportMenu/XNATContourExportMenu';
 import XNATContourImportMenu from './XNATContourImportMenu/XNATContourImportMenu';
-import { refreshViewports, removeContourRoi, XNAT_EVENTS } from '../utils';
+import {
+  refreshViewports,
+  removeContourRoi,
+  XNAT_EVENTS,
+  getDisplaySetFromStudyInstanceUid,
+} from '../utils';
 import { Icon } from '@ohif/ui';
 import sessionMap from '../utils/sessionMap';
 
 import './XNATRoiPanel.styl';
 
 const modules = csTools.store.modules;
+const globalToolStateManager = csTools.globalImageIdSpecificToolStateManager;
 
 /**
  * @class XNATContourMenu - Renders a menu for importing, exporting, creating
@@ -72,10 +77,11 @@ export default class XNATContourPanel extends React.Component {
 
     this.addEventListeners();
 
-    const SeriesInstanceUID = getSeriesInstanceUidFromViewport(
-      viewports,
-      activeIndex
-    );
+    const activeViewport = viewports[activeIndex] || {};
+    const {
+      rootSeriesInstanceUID: SeriesInstanceUID,
+      displaySetInstanceUID,
+    } = activeViewport;
 
     let workingCollection = [];
     let lockedCollectionIds = [];
@@ -98,21 +104,24 @@ export default class XNATContourPanel extends React.Component {
       importing: false,
       exporting: false,
       showSettings: false,
+      displaySetInstanceUID,
       SeriesInstanceUID,
     };
   }
 
   componentDidUpdate(prevProps) {
     const { viewports, activeIndex } = this.props;
-    const { SeriesInstanceUID } = this.state;
+    const { displaySetInstanceUID: currentDisplaySetInstanceUID } = this.state;
 
-    if (
-      viewports[activeIndex] &&
-      viewports[activeIndex].SeriesInstanceUID !== SeriesInstanceUID
-    ) {
-      this.refreshRoiContourList(
-        viewports[activeIndex] && viewports[activeIndex].SeriesInstanceUID
-      );
+    if (viewports && viewports[activeIndex]) {
+      const activeViewport = viewports[activeIndex];
+      const {
+        rootSeriesInstanceUID: SeriesInstanceUID,
+        displaySetInstanceUID,
+      } = activeViewport;
+      if (displaySetInstanceUID !== currentDisplaySetInstanceUID) {
+        this.refreshRoiContourList(SeriesInstanceUID, displaySetInstanceUID);
+      }
     }
   }
 
@@ -128,18 +137,35 @@ export default class XNATContourPanel extends React.Component {
       this.cornerstoneEventListenerHandler
     );
     document.addEventListener(
+      XNAT_EVENTS.CONTOUR_COMPLETED,
+      this.cornerstoneEventListenerHandler
+    );
+    document.addEventListener(
+      XNAT_EVENTS.CONTOUR_REMOVED,
+      this.cornerstoneEventListenerHandler
+    );
+    document.addEventListener(
       'finishedcontourimportusingmodalevent',
       this.cornerstoneEventListenerHandler
     );
   }
 
   cornerstoneEventListenerHandler() {
-    this.refreshRoiContourList(this.state.SeriesInstanceUID);
+    const { SeriesInstanceUID, displaySetInstanceUID } = this.state;
+    this.refreshRoiContourList(SeriesInstanceUID, displaySetInstanceUID);
   }
 
   removeEventListeners() {
     document.removeEventListener(
       XNAT_EVENTS.CONTOUR_ADDED,
+      this.cornerstoneEventListenerHandler
+    );
+    document.removeEventListener(
+      XNAT_EVENTS.CONTOUR_COMPLETED,
+      this.cornerstoneEventListenerHandler
+    );
+    document.removeEventListener(
+      XNAT_EVENTS.CONTOUR_REMOVED,
       this.cornerstoneEventListenerHandler
     );
     document.removeEventListener(
@@ -163,6 +189,7 @@ export default class XNATContourPanel extends React.Component {
    */
   getRoiContourList(SeriesInstanceUID) {
     SeriesInstanceUID = SeriesInstanceUID || this.state.SeriesInstanceUID;
+    const { activeIndex, viewports } = this.props;
 
     let workingCollection = [];
     let lockedCollectionIds = [];
@@ -178,7 +205,8 @@ export default class XNATContourPanel extends React.Component {
       }
 
       workingCollection = this.constructor._workingCollection(
-        SeriesInstanceUID
+        SeriesInstanceUID,
+        viewports && viewports[activeIndex]
       );
       lockedCollectionIds = this.constructor._lockedCollections(
         SeriesInstanceUID
@@ -198,7 +226,7 @@ export default class XNATContourPanel extends React.Component {
    *
    * @returns {null}
    */
-  refreshRoiContourList(SeriesInstanceUID) {
+  refreshRoiContourList(SeriesInstanceUID, displaySetInstanceUID) {
     const {
       workingCollection,
       lockedCollectionIds,
@@ -210,6 +238,9 @@ export default class XNATContourPanel extends React.Component {
       lockedCollectionIds,
       activeROIContourIndex,
       SeriesInstanceUID,
+      displaySetInstanceUID,
+      importing: false,
+      exporting: false,
     });
   }
 
@@ -221,6 +252,8 @@ export default class XNATContourPanel extends React.Component {
    */
   onIOComplete() {
     const SeriesInstanceUID = this.state.SeriesInstanceUID;
+    const { activeIndex, viewports } = this.props;
+
     const freehand3DStore = modules.freehand3D;
     let activeROIContourIndex = 0;
 
@@ -231,7 +264,8 @@ export default class XNATContourPanel extends React.Component {
     }
 
     const workingCollection = this.constructor._workingCollection(
-      SeriesInstanceUID
+      SeriesInstanceUID,
+      viewports && viewports[activeIndex]
     );
     const lockedCollectionIds = this.constructor._lockedCollections(
       SeriesInstanceUID
@@ -254,6 +288,7 @@ export default class XNATContourPanel extends React.Component {
    */
   onNewRoiButtonClick() {
     const SeriesInstanceUID = this.state.SeriesInstanceUID;
+    const { activeIndex, viewports } = this.props;
 
     const freehand3DStore = modules.freehand3D;
     let series = freehand3DStore.getters.series(SeriesInstanceUID);
@@ -270,7 +305,8 @@ export default class XNATContourPanel extends React.Component {
     );
 
     const workingCollection = this.constructor._workingCollection(
-      SeriesInstanceUID
+      SeriesInstanceUID,
+      viewports && viewports[activeIndex]
     );
 
     this.setState({ workingCollection, activeROIContourIndex });
@@ -294,11 +330,11 @@ export default class XNATContourPanel extends React.Component {
   }
 
   onRemoveRoiButtonClick(roiContourUid) {
-    const { SeriesInstanceUID } = this.state;
+    const { SeriesInstanceUID, displaySetInstanceUID } = this.state;
 
     removeContourRoi(SeriesInstanceUID, 'DEFAULT', roiContourUid);
 
-    this.refreshRoiContourList(SeriesInstanceUID);
+    this.refreshRoiContourList(SeriesInstanceUID, displaySetInstanceUID);
     refreshViewports();
   }
 
@@ -391,7 +427,7 @@ export default class XNATContourPanel extends React.Component {
    *
    * @returns {object[]} An array of ROI Contours.
    */
-  static _workingCollection(SeriesInstanceUID) {
+  static _workingCollection(SeriesInstanceUID, viewportData) {
     const freehand3DStore = modules.freehand3D;
 
     let series = freehand3DStore.getters.series(SeriesInstanceUID);
@@ -409,11 +445,47 @@ export default class XNATContourPanel extends React.Component {
 
     const workingCollection = [];
 
+    let isSubStack = false;
+    const subStackRoiContours = {};
+    if (viewportData) {
+      isSubStack = viewportData.isSubStack;
+      if (isSubStack) {
+        const displaySet = getDisplaySetFromStudyInstanceUid(viewportData);
+        const toolStateManager = globalToolStateManager.saveToolState();
+        const keys = Object.keys(toolStateManager);
+        const imageIds = displaySet.images.map(image => image._data.url);
+        imageIds.forEach(imageId => {
+          if (keys.includes(imageId)) {
+            const toolData =
+              toolStateManager[imageId].FreehandRoi3DTool &&
+              toolStateManager[imageId].FreehandRoi3DTool.data;
+            if (!toolData) {
+              return;
+            }
+            const roiUids = toolData.map(contour => contour.ROIContourUid);
+            roiUids.forEach(roiUid => {
+              if (!subStackRoiContours[roiUid]) {
+                subStackRoiContours[roiUid] = 1;
+              } else {
+                subStackRoiContours[roiUid] += 1;
+              }
+            });
+          }
+        });
+      }
+    }
+
     for (let i = 0; i < ROIContourCollection.length; i++) {
+      const metadata = ROIContourCollection[i];
       if (ROIContourCollection[i]) {
         workingCollection.push({
           index: i,
-          metadata: ROIContourCollection[i],
+          metadata,
+          isSubStack,
+          onStackPolygonCount:
+            subStackRoiContours[metadata.uid] !== undefined
+              ? subStackRoiContours[metadata.uid]
+              : 0,
         });
       }
     }
@@ -615,6 +687,7 @@ export default class XNATContourPanel extends React.Component {
                   onUnlockClick={this.confirmUnlockOnUnlockClick}
                   SeriesInstanceUID={SeriesInstanceUID}
                   onContourClick={this.onContourClick}
+                  viewportData={viewports[activeIndex]}
                 />
               </>
             )}

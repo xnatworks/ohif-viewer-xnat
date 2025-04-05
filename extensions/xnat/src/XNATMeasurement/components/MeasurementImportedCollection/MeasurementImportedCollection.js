@@ -10,6 +10,7 @@ const MeasurementImportedCollection = props => {
     onJumpToItem,
     onUnlockCollection,
     onRemoveCollection,
+    imageIds,
   } = props;
   const { metadata, internal } = collection;
 
@@ -88,6 +89,7 @@ const MeasurementImportedCollection = props => {
                 key={measurement.metadata.uuid}
                 measurement={measurement}
                 onJumpToItem={onJumpToItem}
+                imageIds={imageIds}
               />
             ))}
           </tbody>
@@ -102,6 +104,7 @@ MeasurementImportedCollection.propTypes = {
   onJumpToItem: PropTypes.func.isRequired,
   onUnlockCollection: PropTypes.func.isRequired,
   onRemoveCollection: PropTypes.func.isRequired,
+  imageIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default MeasurementImportedCollection;

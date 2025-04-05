@@ -11,10 +11,12 @@ import NotFound from '../routes/NotFound';
 
 import { isLoggedIn, xnatAuthenticate } from '@xnat-ohif/extension-xnat';
 import retrieveDicomWebMetadata from '../lib/xnatDicomWeb/retrieveDicomWebMetadata';
+import { getViewerSettings } from '../utils';
 
-const { log, metadata, utils } = OHIF;
+const { log, metadata, utils, state } = OHIF;
 const { studyMetadataManager, metadataUtils } = utils;
 const { OHIFStudyMetadata } = metadata;
+const { setDisplaySetFromImageIds } = state;
 
 const VALID_BACKGROUND_MODALITIES = ['MR', 'CT'];
 const VALID_OVERLAY_MODALITIES = ['PT', 'NM', 'MR'];
@@ -360,6 +362,14 @@ class XNATStandaloneRouting extends Component {
         dicomWebParameters,
       } = await this.parseQueryAndRetrieveDICOMWebData(rootUrl, query);
 
+      const viewerSettings = await getViewerSettings({
+        rootUrl,
+        projectId: query.projectId,
+      });
+      commandsManager.runCommand('xnatSetViewerSettings', {
+        viewerSettings,
+      });
+
       if (dicomWebParameters.length > 0) {
         console.log('DICOMweb Parameters:');
         console.log(dicomWebParameters);
@@ -599,6 +609,12 @@ async function updateMetaDataProvider(studies) {
   let StudyInstanceUID;
   let SeriesInstanceUID;
 
+  const viewerSettings = commandsManager.runCommand(
+    'xnatGetViewerSettings',
+    {}
+  );
+  const preloadEnhancedImages = viewerSettings.multistack;
+
   for (let study of studies) {
     StudyInstanceUID = study.StudyInstanceUID;
     for (let series of study.series) {
@@ -646,7 +662,8 @@ async function updateMetaDataProvider(studies) {
           ) {
             shouldFetchDataset = true;
           } else if (isEnhancedSOP && !series4DConfig.hasMultiFrameInstances) {
-            shouldFetchDataset = true;
+            // Enhanced instance but is not part of a series with multiple enhanced images
+            shouldFetchDataset = preloadEnhancedImages;
           }
 
           // Add instance to metadata provider.
@@ -664,7 +681,7 @@ async function updateMetaDataProvider(studies) {
               series.isEnhanced = true;
             } else if (series4DConfig.hasMultiFrameInstances) {
               // ToDo: should we add further flags here?
-            } else {
+            } else if (preloadEnhancedImages) {
               // Create individual frame metadata from the enhanced instance
               const naturalizedMetadataList = metadataUtils.parseEnhancedSOP(
                 addedInstance
@@ -680,7 +697,7 @@ async function updateMetaDataProvider(studies) {
                     url: `${imageId}?frame=${j}`,
                   });
                 }
-                series.isEnhanced = isEnhancedSOP;
+                series.isEnhanced = true;
                 const isUniformOrientation = metadataUtils.isSameOrientation(
                   subInstances
                 );
@@ -765,6 +782,10 @@ function updateXnatSessionMap(studies) {
 
   studies.forEach(study => {
     study.displaySets.forEach(displaySet => {
+      if (displaySet.isSubStack) {
+        const imageIds = displaySet.images.map(image => image._data.url);
+        setDisplaySetFromImageIds(imageIds, displaySet);
+      }
       const xnatScan = xnatScans.find(
         scan => scan.seriesInstanceUid === displaySet.SeriesInstanceUID
       );

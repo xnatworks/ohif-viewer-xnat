@@ -5,7 +5,13 @@ import WorkingCollectionItem from './WorkingCollectionItem';
 import { toggleVisibility } from '../../utils';
 
 const MeasurementWorkingCollection = props => {
-  const { collection, onItemRemove, onJumpToItem, onResetViewport } = props;
+  const {
+    collection,
+    onItemRemove,
+    onJumpToItem,
+    onResetViewport,
+    imageIds,
+  } = props;
   const { metadata, internal } = collection;
 
   const [isExpanded, setExpanded] = useState(true);
@@ -93,6 +99,7 @@ const MeasurementWorkingCollection = props => {
                 onItemRemove={onItemRemove}
                 onJumpToItem={onJumpToItem}
                 onResetViewport={onResetViewport}
+                imageIds={imageIds}
               />
             ))}
           </tbody>
@@ -107,6 +114,7 @@ MeasurementWorkingCollection.propTypes = {
   onItemRemove: PropTypes.func.isRequired,
   onJumpToItem: PropTypes.func.isRequired,
   onResetViewport: PropTypes.func.isRequired,
+  imageIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default MeasurementWorkingCollection;

@@ -230,6 +230,8 @@ function _getLabelmapsFromRefernecedFrameIndicies(
 function _createSegFromImages(images, isMultiframe, options) {
   const datasets = [];
 
+  const imageIds = images.map(image => image.imageId);
+
   if (isMultiframe) {
     const image = images[0];
     const arrayBuffer = image.data.byteArray.buffer;
@@ -265,7 +267,7 @@ function _createSegFromImages(images, isMultiframe, options) {
     }
   }
 
-  const multiframe = Normalizer.normalizeToDataset(datasets);
+  const multiframe = Normalizer.normalizeToDataset(datasets, imageIds);
 
   return new SegmentationDerivation([multiframe], options);
 }
@@ -808,21 +810,36 @@ function getImageIdOfReferencedFrame(
   imageIds,
   metadataProvider
 ) {
-  const imageId = imageIds.find(imageId => {
-    const sopCommonModule = metadataProvider.get('sopCommonModule', imageId);
+  let imageId;
+  const rootImageId = imageIds[0].split('?frame=')[0];
+  const isMultiframe = metadataProvider.get('NumberOfFrames', rootImageId) > 1;
 
-    if (!sopCommonModule) {
-      return;
-    }
+  if (isMultiframe) {
+    imageId = imageIds.find(imageId => {
+      const imageIdFrameNumber = Number(imageId.split('frame=')[1]);
 
-    const imageIdFrameNumber = Number(imageId.split('frame=')[1]);
+      return (
+        // FrameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
+        imageIdFrameNumber === frameNumber - 1
+      );
+    });
+  } else {
+    imageId = imageIds.find(imageId => {
+      const sopCommonModule = metadataProvider.get('sopCommonModule', imageId);
 
-    return (
-      // FrameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
-      sopCommonModule.sopInstanceUID === sopInstanceUid &&
-      imageIdFrameNumber === frameNumber - 1
-    );
-  });
+      if (!sopCommonModule) {
+        return;
+      }
+
+      const imageIdFrameNumber = Number(imageId.split('frame=')[1]);
+
+      return (
+        // FrameNumber is zero indexed for cornerstoneWADOImageLoader image Ids.
+        sopCommonModule.sopInstanceUID === sopInstanceUid &&
+        imageIdFrameNumber === frameNumber - 1
+      );
+    });
+  }
 
   return imageId;
 }

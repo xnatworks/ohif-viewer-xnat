@@ -118,6 +118,95 @@ class ImageSet {
 
     return sliceSpacingFirstFrame;
   }
+
+  calculateEnhancedSliceSpacing(seriesData) {
+    if (!seriesData.subInstances) {
+      return;
+    }
+
+    const images = seriesData.subInstances.map(instance => instance.metadata);
+    const referenceImagePositionPatient = images[0].ImagePositionPatient;
+
+    const refIppVec = new Vector3(
+      referenceImagePositionPatient[0],
+      referenceImagePositionPatient[1],
+      referenceImagePositionPatient[2]
+    );
+
+    const ImageOrientationPatient = images[0].ImageOrientationPatient;
+
+    const scanAxisNormal = new Vector3(
+      ImageOrientationPatient[0],
+      ImageOrientationPatient[1],
+      ImageOrientationPatient[2]
+    ).cross(
+      new Vector3(
+        ImageOrientationPatient[3],
+        ImageOrientationPatient[4],
+        ImageOrientationPatient[5]
+      )
+    );
+
+    const distanceImagePairs = images.map(function(image) {
+      const ippVec = new Vector3(...image.ImagePositionPatient);
+      const positionVector = refIppVec.clone().sub(ippVec);
+      const distance = positionVector.dot(scanAxisNormal);
+
+      return {
+        distance,
+        image,
+      };
+    });
+
+    distanceImagePairs.sort(function(a, b) {
+      return a.distance - b.distance;
+    });
+
+    // Slice spacing of the first frame
+    const distance = Math.abs(
+      distanceImagePairs[0].distance - distanceImagePairs[1].distance
+    );
+    const sliceSpacingFirstFrame = parseFloat(distance.toFixed(6));
+
+    return sliceSpacingFirstFrame;
+  }
+
+  calculateSubStackSliceSpacing() {
+    const images = this.images;
+    if (!images || images.length < 2) {
+      return;
+    }
+
+    const image0 = images[0];
+    const referenceImagePositionPatient = _getImagePositionPatient(image0);
+
+    const refIppVec = new Vector3(
+      referenceImagePositionPatient[0],
+      referenceImagePositionPatient[1],
+      referenceImagePositionPatient[2]
+    );
+
+    const ImageOrientationPatient = _getImageOrientationPatient(image0);
+
+    const scanAxisNormal = new Vector3(
+      ImageOrientationPatient[0],
+      ImageOrientationPatient[1],
+      ImageOrientationPatient[2]
+    ).cross(
+      new Vector3(
+        ImageOrientationPatient[3],
+        ImageOrientationPatient[4],
+        ImageOrientationPatient[5]
+      )
+    );
+
+    const image1 = images[1];
+    const ippVec = new Vector3(..._getImagePositionPatient(image1));
+    const positionVector = refIppVec.clone().sub(ippVec);
+    const distance = positionVector.dot(scanAxisNormal);
+
+    return distance > 0 ? distance : undefined;
+  }
 }
 
 function _getImagePositionPatient(image) {

@@ -881,18 +881,26 @@ const makeDisplaySet = (series, instances) => {
   const imageSet = new ImageSet(instances);
   const seriesData = series.getData();
 
+  const _isMultiFrame = isMultiFrame(instance);
+  let firstImageId = instance._data.url;
+  if (_isMultiFrame) {
+    firstImageId += '?frame=0';
+  }
+
   // set appropriate attributes to image set...
   imageSet.setAttributes({
+    firstImageId,
     displaySetInstanceUID: imageSet.uid, // create a local alias for the imageSet UID
     SeriesDate: seriesData.SeriesDate,
     SeriesTime: seriesData.SeriesTime,
     SeriesInstanceUID: series.getSeriesInstanceUID(),
+    rootSeriesInstanceUID: series.getSeriesInstanceUID(),
     SeriesNumber: instance.getTagValue('SeriesNumber'),
     SeriesDescription: instance.getTagValue('SeriesDescription'),
     numImageFrames: instances.length,
     frameRate: instance.getTagValue('FrameTime'),
     Modality: instance.getTagValue('Modality'),
-    isMultiFrame: isMultiFrame(instance),
+    isMultiFrame: _isMultiFrame,
     FrameOfReferenceUID: instance.getTagValue('FrameOfReferenceUID'),
     isEnhanced: seriesData.isEnhanced,
     isMultiStack: seriesData.isMultiStack,
@@ -927,15 +935,11 @@ const makeDisplaySet = (series, instances) => {
     imageSet.getImage(0).getTagValue('InstanceNumber')
   );
 
-  const displayReconstructableInfo = isDisplaySetReconstructable(instances);
+  const displayReconstructableInfo = isDisplaySetReconstructable(
+    instances,
+    seriesData
+  );
   imageSet.isReconstructable = displayReconstructableInfo.isReconstructable;
-
-  if (is4D) {
-    displayReconstructableInfo.reconstructionIssues.push(
-      ReconstructionIssues.DATASET_4D
-    );
-    imageSet.isReconstructable = false;
-  }
 
   let displaySpacingInfo = undefined;
   if (
@@ -959,6 +963,10 @@ const makeDisplaySet = (series, instances) => {
       // Volumes with gaps later on.
       imageSet.missingFrames = displaySpacingInfo.missingFrames;
     }
+  } else if (imageSet.isReconstructable && imageSet.isEnhanced && !is4D) {
+    imageSet.sliceSpacingFirstFrame = imageSet.calculateEnhancedSliceSpacing(
+      seriesData
+    );
   }
 
   if (displaySpacingInfo) {
@@ -988,13 +996,16 @@ const makeDisplaySetFromSubStack = (subStack, refDisplaySet) => {
   const instance = instances[0];
   const imageSet = new ImageSet(instances);
   const seriesData = series.getData();
+  const firstImageId = instance._data.url;
 
   // set appropriate attributes to image set...
   imageSet.setAttributes({
+    firstImageId,
     displaySetInstanceUID: imageSet.uid, // create a local alias for the imageSet UID
     SeriesDate: seriesData.SeriesDate,
     SeriesTime: seriesData.SeriesTime,
     SeriesInstanceUID: seriesData.SeriesInstanceUID,
+    rootSeriesInstanceUID: refDisplaySet.SeriesInstanceUID,
     SeriesNumber: seriesData.SeriesNumber,
     SeriesDescription: seriesData.SeriesDescription,
     numImageFrames: instances.length,
@@ -1024,6 +1035,8 @@ const makeDisplaySetFromSubStack = (subStack, refDisplaySet) => {
   const middleImageIndex = Math.floor(instances.length / 2);
   imageSet.setAttribute('middleImageIndex', middleImageIndex);
   imageSet.setAttribute('firstShow', displayFromTheMiddleEnabled);
+
+  imageSet.sliceSpacingFirstFrame = imageSet.calculateSubStackSliceSpacing();
 
   return imageSet;
 };

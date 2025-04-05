@@ -14,7 +14,7 @@ import XNATSegmentationExportMenu from './XNATSegmentationExportMenu/XNATSegment
 import XNATSegmentationImportMenu from './XNATSegmentationImportMenu/XNATSegmentationImportMenu';
 import XNATSegmentationSettings from './XNATSegmentationSettings/XNATSegmentationSettings';
 import getElementFromFirstImageId from '../utils/getElementFromFirstImageId';
-import { utils } from '@ohif/core';
+import { utils, OHIF } from '@ohif/core';
 import { Icon } from '@ohif/ui';
 import MaskRoiPropertyModal from './XNATSegmentationMenu/MaskRoiPropertyModal.js';
 import showModal from './common/showModal.js';
@@ -24,6 +24,8 @@ import SegmentationStatsMenu from './XNATSegmentationMenu/SegmentationStatsMenu'
 import sessionMap from '../utils/sessionMap';
 
 import './XNATRoiPanel.styl';
+
+const { ReconstructionIssues } = OHIF;
 
 const SUPPORTED_EXPORT_MODALITIES = ['CT', 'MR', 'PT', 'US'];
 
@@ -45,11 +47,9 @@ const _getFirstImageId = ({ StudyInstanceUID, displaySetInstanceUID }) => {
     const displaySet = studyMetadata.findDisplaySet(
       displaySet => displaySet.displaySetInstanceUID === displaySetInstanceUID
     );
-    const image = displaySet.images[0];
-    const { metadata } = image.getData();
-    let imageId = image.getImageId();
-    if (metadata.NumberOfFrames > 1 && !imageId.includes('frame=')) {
-      imageId = `${imageId}?frame=0`;
+    let imageId = displaySet.firstImageId;
+    if (displaySet.isSubStack) {
+      imageId = displaySet.refDisplaySet.firstImageId;
     }
     return imageId;
   } catch (error) {
@@ -102,6 +102,7 @@ export default class XNATSegmentationPanel extends React.Component {
     );
     this.onMaskClick = this.onMaskClick.bind(this);
     this.onShow2DStats = this.onShow2DStats.bind(this);
+    this.findSegmentSlices = this.findSegmentSlices.bind(this);
 
     const { viewports, activeIndex } = props;
     const firstImageId = _getFirstImageId(viewports[activeIndex]);
@@ -119,6 +120,16 @@ export default class XNATSegmentationPanel extends React.Component {
       labelmap3D = segmentList.labelmap3D;
     }
 
+    const { Modality, reconstructionIssues } = viewports[activeIndex];
+    const {
+      importDisabledMessage,
+      exportDisabledMessage,
+    } = this.checkImportExport({
+      labelmap3D,
+      Modality,
+      reconstructionIssues,
+    });
+
     this.state = {
       importMetadata,
       segments,
@@ -129,6 +140,8 @@ export default class XNATSegmentationPanel extends React.Component {
       showSegmentationSettings: false,
       labelmap3D,
       show2DStats: false,
+      importDisabledMessage,
+      exportDisabledMessage,
     };
 
     this.addEventListeners();
@@ -188,6 +201,17 @@ export default class XNATSegmentationPanel extends React.Component {
       labelmap3D = segmentList.labelmap3D;
     }
 
+    const { viewports, activeIndex } = this.props;
+    const { Modality, reconstructionIssues } = viewports[activeIndex];
+    const {
+      importDisabledMessage,
+      exportDisabledMessage,
+    } = this.checkImportExport({
+      labelmap3D,
+      Modality,
+      reconstructionIssues,
+    });
+
     this.setState({
       importMetadata,
       segments,
@@ -196,7 +220,42 @@ export default class XNATSegmentationPanel extends React.Component {
       importing: false,
       exporting: false,
       labelmap3D,
+      importDisabledMessage,
+      exportDisabledMessage,
     });
+  }
+
+  checkImportExport({ labelmap3D, Modality, reconstructionIssues }) {
+    let exportDisabledMessage;
+    let importDisabledMessage;
+
+    let isFractional = false;
+    if (labelmap3D) {
+      isFractional = labelmap3D.isFractional;
+    }
+    if (isFractional) {
+      exportDisabledMessage =
+        'Exporting fractional segmentation is not supported yet.';
+    } else if (!SUPPORTED_EXPORT_MODALITIES.includes(Modality)) {
+      exportDisabledMessage =
+        'Segmentation export is not supported for this modality.';
+    } else if (!sessionMap.hasCreatePermission()) {
+      exportDisabledMessage = 'Segmentation export is not permitted.';
+    } else if (Array.isArray(reconstructionIssues)) {
+      if (
+        reconstructionIssues.includes(
+          ReconstructionIssues.VARYING_IMAGESORIENTATION
+        )
+      ) {
+        importDisabledMessage = exportDisabledMessage =
+          'The dataset frames have different orientation.';
+      }
+    }
+
+    return {
+      importDisabledMessage,
+      exportDisabledMessage,
+    };
   }
 
   componentDidUpdate() {
@@ -417,6 +476,50 @@ export default class XNATSegmentationPanel extends React.Component {
     this.refreshSegmentList(firstImageId);
   }
 
+  findSegmentSlices(segmentIndex) {
+    const { activeIndex, viewports } = this.props;
+    const { labelmap3D } = this.state;
+
+    const enabledElements = cornerstone.getEnabledElements();
+    const enabledElement = enabledElements[activeIndex];
+    if (!enabledElement) {
+      return { segmentSlices: [], segmentMidSlice: undefined };
+    }
+    const element = enabledElement.element;
+
+    const toolState = getToolState(element, 'stack');
+    if (!toolState) {
+      return { segmentSlices: [], segmentMidSlice: undefined };
+    }
+
+    let segmentSlices = [];
+    for (const [key, value] of Object.entries(labelmap3D.labelmaps2D)) {
+      if (value.segmentsOnLabelmap.includes(segmentIndex)) {
+        segmentSlices.push(Number(key));
+      }
+    }
+
+    const viewportData = viewports[activeIndex];
+    if (viewportData.isSubStack) {
+      const { stackData: subStackData } = viewportData;
+      const refIndices = subStackData.refIndices;
+      const mappedSegmentSlices = [];
+      segmentSlices.forEach(index => {
+        const subStackIndex = refIndices.indexOf(index);
+        if (subStackIndex >= 0) {
+          mappedSegmentSlices.push(subStackIndex);
+        }
+      });
+      segmentSlices = mappedSegmentSlices;
+    }
+
+    const segmentMidSlice = segmentSlices.length
+      ? segmentSlices[Math.floor(segmentSlices.length / 2)]
+      : undefined;
+
+    return { segmentSlices, segmentMidSlice };
+  }
+
   /**
    * onMaskClick - Jumps to the middle slice of a segment
    *
@@ -580,6 +683,8 @@ export default class XNATSegmentationPanel extends React.Component {
       firstImageId,
       labelmap3D,
       show2DStats,
+      importDisabledMessage,
+      exportDisabledMessage,
     } = this.state;
 
     const { viewports, activeIndex, showColorSelectModal } = this.props;
@@ -590,17 +695,6 @@ export default class XNATSegmentationPanel extends React.Component {
 
     if (labelmap3D) {
       isFractional = labelmap3D.isFractional;
-    }
-
-    let exportDisabledMessage;
-    if (isFractional) {
-      exportDisabledMessage =
-        'Exporting fractional segmentation is not supported yet.';
-    } else if (!SUPPORTED_EXPORT_MODALITIES.includes(Modality)) {
-      exportDisabledMessage =
-        'Segmentation export is not supported for this modality.';
-    } else if (!sessionMap.hasCreatePermission()) {
-      exportDisabledMessage = 'Segmentation export is not permitted.';
     }
 
     const addSegmentButton = isFractional ? null : (
@@ -664,6 +758,7 @@ export default class XNATSegmentationPanel extends React.Component {
               ExportCallbackOrComponent={XNATSegmentationExportMenu}
               onImportButtonClick={() => this.setState({ importing: true })}
               onExportButtonClick={() => this.setState({ exporting: true })}
+              importDisabledMessage={importDisabledMessage}
               exportDisabledMessage={exportDisabledMessage}
             />
           </div>
@@ -706,6 +801,7 @@ export default class XNATSegmentationPanel extends React.Component {
                     showColorSelectModal={showColorSelectModal}
                     onDeleteClick={this.onDeleteClick}
                     onMaskClick={this.onMaskClick}
+                    findSegmentSlices={this.findSegmentSlices}
                   />
                 </tbody>
               </table>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import csTools from 'cornerstone-tools';
 import { Range } from '@ohif/ui';
@@ -7,15 +7,15 @@ import refreshViewports from '../../utils/refreshViewports';
 import './XNATSegmentationSettings.css';
 
 const segmentationModule = csTools.getModule('segmentation');
-const { configuration } = segmentationModule;
 
-const XNATSegmentationSettings = ({
-  onBack,
-}) => {
-  const [state, setState] = useState({ ...configuration });
+const XNATSegmentationSettings = ({ onBack }) => {
+  const configRef = useRef(segmentationModule.configuration);
+  const [state, setState] = useState({ ...configRef.current });
 
   useEffect(() => {
-    const callback = () => setState({ ...configuration });
+    const callback = () => {
+      setState({ ...configRef.current });
+    };
     document.addEventListener('brushtoolsizechange', callback);
 
     return () => {
@@ -28,17 +28,17 @@ const XNATSegmentationSettings = ({
   }, [state]);
 
   const check = field => {
-    configuration[field] = !configuration[field];
-    setState({ ...configuration });
+    configRef.current[field] = !configRef.current[field];
+    setState({ ...configRef.current });
   };
 
   const save = (field, value) => {
     if (field === 'radius') {
       segmentationModule.setters.radius(value);
     } else {
-      configuration[field] = value;
+      configRef.current[field] = value;
     }
-    setState({ ...configuration });
+    setState({ ...configRef.current });
   };
 
   const toFloat = value => parseFloat(value) / 100;
@@ -46,20 +46,20 @@ const XNATSegmentationSettings = ({
   const SegmentFill = (
     <div
       className="settings-group"
-      style={{ marginBottom: configuration.renderFill ? 15 : 0 }}
+      style={{ marginBottom: configRef.current.renderFill ? 15 : 0 }}
     >
       <CustomCheck
         label="Segment Fill"
-        checked={configuration.renderFill}
+        checked={configRef.current.renderFill}
         onChange={() => check('renderFill')}
       />
-      {configuration.renderFill && (
+      {configRef.current.renderFill && (
         <CustomRange
           label="Opacity"
           step={1}
           min={0}
           max={100}
-          value={Number((configuration.fillAlpha * 100).toFixed(0))}
+          value={Number((configRef.current.fillAlpha * 100).toFixed(0))}
           onChange={event => save('fillAlpha', toFloat(event.target.value))}
           showPercentage
         />
@@ -70,17 +70,17 @@ const XNATSegmentationSettings = ({
   const SegmentOutline = (
     <div
       className="settings-group"
-      style={{ marginBottom: configuration.renderOutline ? 15 : 0 }}
+      style={{ marginBottom: configRef.current.renderOutline ? 15 : 0 }}
     >
       <CustomCheck
         label="Segment Outline"
-        checked={configuration.renderOutline}
+        checked={configRef.current.renderOutline}
         onChange={() => check('renderOutline')}
       />
-      {configuration.renderOutline && (
+      {configRef.current.renderOutline && (
         <>
           <CustomRange
-            value={Number((configuration.outlineAlpha * 100).toFixed(0))}
+            value={Number((configRef.current.outlineAlpha * 100).toFixed(0))}
             label="Opacity"
             showPercentage
             step={1}
@@ -91,7 +91,7 @@ const XNATSegmentationSettings = ({
             }
           />
           <CustomRange
-            value={configuration.outlineWidth}
+            value={configRef.current.outlineWidth}
             label="Width"
             showValue
             step={1}
@@ -114,9 +114,9 @@ const XNATSegmentationSettings = ({
       <CustomRange
         label="Radius"
         step={1}
-        min={configuration.minRadius}
-        max={configuration.maxRadius}
-        value={configuration.radius}
+        min={configRef.current.minRadius}
+        max={configRef.current.maxRadius}
+        value={configRef.current.radius}
         onChange={event => save('radius', parseInt(event.target.value))}
         showValue
       />

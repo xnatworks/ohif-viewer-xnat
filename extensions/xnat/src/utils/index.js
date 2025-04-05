@@ -10,6 +10,7 @@ import onKeyDownEvent from './onKeyDownEvent';
 import KEY_COMMANDS from './keyCommands';
 import viewportOptionsManager from './ViewportOptionsManager';
 import fetchCSRFToken from './IO/fetchCSRFToken';
+import getDisplaySetFromStudyInstanceUid from './IO/helpers/getDisplaySetFromStudyInstanceUid';
 
 export {
   DATA_IMPORT_STATUS,
@@ -24,4 +25,5 @@ export {
   KEY_COMMANDS,
   viewportOptionsManager,
   fetchCSRFToken,
+  getDisplaySetFromStudyInstanceUid,
 };

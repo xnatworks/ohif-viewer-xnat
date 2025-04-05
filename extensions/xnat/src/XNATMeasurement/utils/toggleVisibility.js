@@ -1,13 +1,15 @@
 import { xnatMeasurementApi } from '../api';
 import refreshViewports from '../../utils/refreshViewports';
+import { getSeriesAttributes } from './index';
 
 const toggleItemVisibility = (
   uuid,
-  displaySetInstanceUID,
+  _displaySetInstanceUID,
   importedCollectionUuid = undefined
 ) => {
+  const seriesAttributes = getSeriesAttributes(_displaySetInstanceUID);
   const collections = xnatMeasurementApi.getMeasurementCollections(
-    displaySetInstanceUID
+    seriesAttributes
   );
 
   let collection;
@@ -30,11 +32,12 @@ const toggleItemVisibility = (
 };
 
 const toggleCollectionVisibility = (
-  displaySetInstanceUID,
+  _displaySetInstanceUID,
   importedCollectionUuid = undefined
 ) => {
+  const seriesAttributes = getSeriesAttributes(_displaySetInstanceUID);
   const collections = xnatMeasurementApi.getMeasurementCollections(
-    displaySetInstanceUID
+    seriesAttributes
   );
 
   let collection;

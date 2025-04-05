@@ -4,6 +4,7 @@ import cornerstone from 'cornerstone-core';
 import {
   calculateMaskRoi2DStats,
   getRoiMeasurementUnits,
+  getFirstImageId,
 } from '../../peppermint-tools';
 import SegmentStats from './SegmentStats';
 
@@ -20,10 +21,21 @@ const SegmentationStatsMenu = props => {
   if (!enabledElements || enabledElements.length === 0) {
     return null;
   }
+  const enabledElement = enabledElements[activeViewportIndex];
+  if (!enabledElement) {
+    return null;
+  }
+
+  const firstImageIdData = getFirstImageId(enabledElement);
+  if (!firstImageIdData) {
+    return null;
+  }
+
+  const currentImageIdIndex = firstImageIdData.currentImageIdIndex;
 
   calculateMaskRoi2DStats(
     enabledElements[activeViewportIndex].element,
-    frameIndex
+    currentImageIdIndex
   );
 
   const { rowPixelSpacing } = enabledElements[activeViewportIndex].image;
@@ -53,7 +65,7 @@ const SegmentationStatsMenu = props => {
                 <SegmentStats
                   key={index}
                   metadata={segment.metadata}
-                  frameIndex={frameIndex}
+                  frameIndex={currentImageIdIndex}
                 />
               );
             })}

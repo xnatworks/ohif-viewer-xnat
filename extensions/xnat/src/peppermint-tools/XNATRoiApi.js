@@ -266,8 +266,7 @@ class XNATRoiApi {
 
     return {
       sliceSpacingFirstFrame: displaySet.sliceSpacingFirstFrame,
-      canCalculateVolume:
-        displaySet.isReconstructable && !displaySet.isMultiFrame,
+      canCalculateVolume: displaySet.sliceSpacingFirstFrame !== undefined,
       modality: displaySet.Modality,
       frameIndex: displaySet.frameIndex,
     };

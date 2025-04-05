@@ -102,9 +102,9 @@ export default class XNATContourExportMenu extends React.Component {
 
     this.setState({ exporting: true });
 
-    const roiExtractor = new RoiExtractor(SeriesInstanceUID);
-    const roiContours = roiExtractor.extractROIContours(exportMask);
     const seriesInfo = getSeriesInfoForImageId(viewportData);
+    const roiExtractor = new RoiExtractor(seriesInfo);
+    const roiContours = roiExtractor.extractROIContours(exportMask);
 
     const xnat_label = `${label}_S${seriesInfo.seriesNumber}`;
 

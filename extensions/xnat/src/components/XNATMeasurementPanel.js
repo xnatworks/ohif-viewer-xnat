@@ -12,6 +12,7 @@ import {
   MeasurementImportMenu,
   assignViewportParameters,
 } from '../XNATMeasurement';
+import { getSeriesAttributes } from '../XNATMeasurement/utils';
 import { refreshViewports, XNAT_EVENTS } from '../utils';
 import sessionMap from '../utils/sessionMap';
 
@@ -40,8 +41,9 @@ export default class XNATMeasurementPanel extends React.Component {
 
     const displaySetInstanceUID = viewports[activeIndex].displaySetInstanceUID;
 
+    const seriesAttributes = getSeriesAttributes(displaySetInstanceUID);
     const seriesCollection = xnatMeasurementApi.getMeasurementCollections(
-      displaySetInstanceUID
+      seriesAttributes
     );
 
     this.state = {
@@ -51,6 +53,7 @@ export default class XNATMeasurementPanel extends React.Component {
       displaySetInstanceUID,
       seriesCollection,
       selectedKey: '',
+      imageIds: seriesAttributes.imageIds,
     };
 
     this.onIOComplete = this.onIOComplete.bind(this);
@@ -141,10 +144,19 @@ export default class XNATMeasurementPanel extends React.Component {
     const { viewports, activeIndex } = this.props;
     if (viewports[activeIndex]) {
       const { displaySetInstanceUID } = viewports[activeIndex];
-      const seriesCollection = xnatMeasurementApi.getMeasurementCollections(
-        displaySetInstanceUID
+      const seriesAttributes = getSeriesAttributes(
+        viewports[activeIndex].displaySetInstanceUID
       );
-      this.setState({ displaySetInstanceUID, seriesCollection });
+      const seriesCollection = xnatMeasurementApi.getMeasurementCollections(
+        seriesAttributes
+      );
+      this.setState({
+        displaySetInstanceUID,
+        seriesCollection,
+        imageIds: seriesAttributes.imageIds,
+        importing: false,
+        exporting: false,
+      });
     }
   }
 
@@ -238,6 +250,7 @@ export default class XNATMeasurementPanel extends React.Component {
       displaySetInstanceUID,
       seriesCollection,
       selectedKey,
+      imageIds,
     } = this.state;
 
     if (!seriesCollection) {
@@ -256,7 +269,9 @@ export default class XNATMeasurementPanel extends React.Component {
     if (showSettings) {
       component = <div>Measurement Settings</div>;
     } else if (importing) {
-      const { SeriesInstanceUID } = viewports[activeIndex];
+      const { rootSeriesInstanceUID: SeriesInstanceUID } = viewports[
+        activeIndex
+      ];
       component = (
         <MeasurementImportMenu
           onImportComplete={this.onIOComplete}
@@ -304,6 +319,7 @@ export default class XNATMeasurementPanel extends React.Component {
               onItemRemove={this.onItemRemove}
               onJumpToItem={this.onJumpToItem}
               onResetViewport={this.onResetViewport}
+              imageIds={imageIds}
             />
             {/* IMPORTED COLLECTIONS */}
             {seriesCollection.importedCollections.length !== 0 && (
@@ -319,6 +335,7 @@ export default class XNATMeasurementPanel extends React.Component {
                       onJumpToItem={this.onJumpToItem}
                       onUnlockCollection={this.onUnlockImportedCollection}
                       onRemoveCollection={this.onRemoveImportedCollection}
+                      imageIds={imageIds}
                     />
                   )
                 )}

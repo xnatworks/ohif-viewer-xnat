@@ -18,10 +18,11 @@ const WorkingCollectionItem = props => {
     onItemRemove,
     onJumpToItem,
     onResetViewport,
+    imageIds,
   } = props;
   const { metadata, internal, csData } = measurement;
   const { uuid, name, description, codingSequence, visible, color } = metadata;
-  const { icon, displaySetInstanceUID } = internal;
+  const { icon, displaySetInstanceUID, imageId } = internal;
 
   const [isVisible, setVisible] = useState(visible);
   const [coding, setCoding] = useState({
@@ -31,6 +32,10 @@ const WorkingCollectionItem = props => {
       codingSequence[0].TypeCodeSequence.TypeModifierCodeSequence &&
       codingSequence[0].TypeCodeSequence.TypeModifierCodeSequence.CodeMeaning,
   });
+
+  if (!imageIds.includes(imageId)) {
+    return null;
+  }
 
   const codingText = getCodingText(coding);
 
@@ -169,6 +174,7 @@ WorkingCollectionItem.propTypes = {
   onItemRemove: PropTypes.func.isRequired,
   onJumpToItem: PropTypes.func.isRequired,
   onResetViewport: PropTypes.func.isRequired,
+  imageIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 const _onEditClick = (metadata, csData, onCodingUpdated) => {

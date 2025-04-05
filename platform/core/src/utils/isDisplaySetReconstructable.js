@@ -1,22 +1,29 @@
-import cornerstone from 'cornerstone-core';
 import { ReconstructionIssues } from './../enums.js';
+import isEnhancedSOP from './metadataProvider/isEnhancedSOP';
+import { sopClassDictionary } from './sopClassDictionary';
 
 /**
  * Checks if a series is reconstructable to a 3D volume.
  *
- * @param {Object[]} An array of `OHIFInstanceMetadata` objects.
  *
  * @returns {Object} value, reconstructionIssues.
+ * @param instances
+ * @param seriesData
  */
-function isDisplaySetReconstructable(instances) {
-  if (!instances.length) {
-    return { isReconstructable: false };
+function isDisplaySetReconstructable(instances, seriesData = {}) {
+  const series4DConfig = seriesData._4DConfig;
+
+  if (!instances || instances.length === 0) {
+    return {
+      isReconstructable: false,
+      reconstructionIssues: [],
+    };
   }
 
-  const firstInstance = instances[0].getData().metadata;
+  const { metadata } = instances[0].getData();
+  const { SOPClassUID, Modality, NumberOfFrames, ImageType } = metadata;
 
-  const Modality = firstInstance.Modality;
-  const isMultiframe = firstInstance.NumberOfFrames > 1;
+  const isMultiframe = NumberOfFrames > 1;
 
   if (!constructableModalities.includes(Modality)) {
     return {
@@ -33,10 +40,44 @@ function isDisplaySetReconstructable(instances) {
     };
   }
 
+  if (isMultiframe && NumberOfFrames < 2) {
+    return {
+      isReconstructable: false,
+      reconstructionIssues: [],
+    };
+  }
+
+  if (series4DConfig && series4DConfig.is4D) {
+    return {
+      isReconstructable: false,
+      reconstructionIssues: [ReconstructionIssues.DATASET_4D],
+    };
+  }
+
   if (isMultiframe) {
-    return processMultiframe(instances);
+    if (seriesData.isEnhanced) {
+      if (SOPClassUID === sopClassDictionary.NuclearMedicineImageStorage) {
+        return processNMMultiframe(ImageType);
+      } else if (seriesData.subInstances) {
+        return processSingleframe(
+          seriesData.subInstances.map(instance => instance.metadata)
+        );
+      } else {
+        return {
+          isReconstructable: false,
+          reconstructionIssues: [ReconstructionIssues.MULTIFRAMES],
+        };
+      }
+    } else {
+      return {
+        isReconstructable: false,
+        reconstructionIssues: [ReconstructionIssues.MULTIFRAMES],
+      };
+    }
   } else {
-    return processSingleframe(instances);
+    return processSingleframe(
+      instances.map(instance => instance.getData().metadata)
+    );
   }
 }
 
@@ -46,39 +87,32 @@ function isDisplaySetReconstructable(instances) {
  * *
  * @returns {Object} value and reconstructionIssues.
  */
-function processMultiframe(instances) {
-  const value = {
-    isReconstructable: false,
-    reconstructionIssues: [],
-  };
-  const { metadata } = instances[0].getData();
-  // enable for NM image
-  const imageType = metadata.ImageType;
-  const supportedNMImage = imageType[3] && imageType[2] === 'RECON TOMO';
-  if (
-    // Exclude NM modality with "RECON TOMO" type
-    metadata.SOPClassUID === '1.2.840.10008.5.1.4.1.1.20' &&
-    metadata.NumberOfFrames > 2 &&
-    supportedNMImage
-  ) {
-    value.isReconstructable = true;
-  } else {
-    value.reconstructionIssues.push(ReconstructionIssues.MULTIFRAMES);
+function processNMMultiframe(imageType) {
+  // Exclude NM modality with "RECON TOMO" type from ReconstructionIssues
+  const isSupportedNMImage = imageType[3] && imageType[2] === 'RECON TOMO';
+  if (isSupportedNMImage) {
+    return {
+      isReconstructable: true,
+      reconstructionIssues: [],
+    };
   }
 
-  return value;
+  return {
+    isReconstructable: false,
+    reconstructionIssues: [ReconstructionIssues.MULTIFRAMES],
+  };
 }
 
 /**
  * Process reconstructable single frame checks
  *
- * @param {Object[]} An array of `OHIFInstanceMetadata` objects.
  *
  * @returns {Object} value and reconstructionIssues.
+ * @param instances
  */
 function processSingleframe(instances) {
   const n = instances.length;
-  const firstImage = instances[0].getData().metadata;
+  const firstImage = instances[0];
   const firstImageRows = firstImage.Rows;
   const firstImageColumns = firstImage.Columns;
   const firstImageSamplesPerPixel = firstImage.SamplesPerPixel;
@@ -90,7 +124,7 @@ function processSingleframe(instances) {
   // -- Have a different number of components within a displaySet.
   // -- Have different orientations within a displaySet.
   for (let ii = 1; ii < n; ++ii) {
-    const instance = instances[ii].getData().metadata;
+    const instance = instances[ii];
     const {
       Rows,
       Columns,

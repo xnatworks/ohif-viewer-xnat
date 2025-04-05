@@ -395,11 +395,17 @@ const commandsModule = ({ servicesManager }) => {
       );
 
       const displaySet = study.findDisplaySet(ds => {
-        return (
-          ds.displaySetInstanceUID === displaySetInstanceUID &&
-          ds.images &&
-          ds.images.find(i => i.getSOPInstanceUID() === SOPInstanceUID)
-        );
+        if (ds.isEnhanced) {
+          return (
+            ds.displaySetInstanceUID === displaySetInstanceUID && ds.images
+          );
+        } else {
+          return (
+            ds.displaySetInstanceUID === displaySetInstanceUID &&
+            ds.images &&
+            ds.images.find(i => i.getSOPInstanceUID() === SOPInstanceUID)
+          );
+        }
       });
 
       if (!displaySet) {

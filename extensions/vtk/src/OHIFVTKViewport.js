@@ -850,10 +850,10 @@ function _getRangeFromWindowLevels(imageId, modality, scalingParameters) {
   let lower = 0;
   let upper = 512;
 
-  let { windowWidth, windowCenter } = cornerstone.metaData.get(
-    'voiLutModule',
-    imageId
-  );
+  let {
+    WindowWidth: windowWidth,
+    WindowCenter: windowCenter,
+  } = cornerstone.metaData.get('instance', imageId);
 
   if (Array.isArray(windowWidth)) {
     windowWidth = windowWidth[0];

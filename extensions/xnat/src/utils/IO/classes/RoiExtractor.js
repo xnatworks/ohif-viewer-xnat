@@ -13,8 +13,12 @@ const { FREEHAND_ROI_3D_TOOL } = PEPPERMINT_TOOL_NAMES;
  *                       to XNAT.
  */
 export default class RoiExtractor {
-  constructor(seriesInstanceUid) {
+  constructor(seriesInfo) {
+    const { seriesInstanceUid, multiframeSopInstanceUid } = seriesInfo;
+
     this._seriesInstanceUid = seriesInstanceUid;
+    this._multiframeSopInstanceUid = multiframeSopInstanceUid;
+
     this._ROIContours = [];
     this._ROIColor = [];
     this._freehand3DStore = modules.freehand3D;
@@ -114,8 +118,14 @@ export default class RoiExtractor {
    */
   _appendPolygon(data, imageId, ROIContourIndex) {
     const ROIContourName = data.referencedROIContour.name;
-    const sopInstanceUid = this._getSOPInstanceUidFromImageId(imageId);
     const frameNumber = this._getFrameNumber(imageId);
+
+    let sopInstanceUid;
+    if (this._multiframeSopInstanceUid) {
+      sopInstanceUid = this._multiframeSopInstanceUid;
+    } else {
+      sopInstanceUid = this._getSOPInstanceUidFromImageId(imageId);
+    }
 
     const polygon = new Polygon(
       data.handles.points,

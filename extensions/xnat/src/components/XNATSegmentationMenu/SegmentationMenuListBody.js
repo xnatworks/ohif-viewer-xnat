@@ -24,6 +24,7 @@ export default class SegmentationMenuListBody extends React.Component {
       showColorSelectModal,
       onDeleteClick,
       onMaskClick,
+      findSegmentSlices,
     } = this.props;
 
     return (
@@ -40,6 +41,7 @@ export default class SegmentationMenuListBody extends React.Component {
             showColorSelectModal={showColorSelectModal}
             onDeleteClick={onDeleteClick}
             onClick={onMaskClick}
+            findSegmentSlices={findSegmentSlices}
           />
         ))}
       </React.Fragment>
