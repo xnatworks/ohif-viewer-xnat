@@ -1,6 +1,10 @@
 import PEPPERMINT_TOOL_NAMES from './toolNames.js';
 
-import { freehand3DModule, extendSegmentationModule } from './modules';
+import {
+  freehand3DModule,
+  extendSegmentationModule,
+  getFirstImageId,
+} from './modules';
 
 import {
   FreehandRoi3DTool,
@@ -60,6 +64,7 @@ export {
   generateUID,
   GeneralAnatomyList,
   removeEmptyLabelmaps2D,
+  getFirstImageId,
   // Initialization
   initXNATRoi,
   // Events

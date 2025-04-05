@@ -15,6 +15,8 @@ import {
 import '../XNATRoiPanel.styl';
 
 const modules = cornerstoneTools.store.modules;
+const globalToolStateManager =
+  cornerstoneTools.globalImageIdSpecificToolStateManager;
 
 /**
  * @class LockedCollectionsListItem - Renders metadata for an individual locked
@@ -26,15 +28,17 @@ export default class LockedCollectionsListItem extends React.Component {
     onUnlockClick: PropTypes.func.isRequired,
     SeriesInstanceUID: PropTypes.string.isRequired,
     onClick: PropTypes.func.isRequired,
+    displaySet: PropTypes.object,
   };
 
   static defaultProps = {
+    displaySet: undefined,
   };
 
   constructor(props = {}) {
     super(props);
 
-    const { collectionId, SeriesInstanceUID } = props;
+    const { collectionId, SeriesInstanceUID, displaySet } = props;
 
     this._structureSet = modules.freehand3D.getters.structureSet(
       SeriesInstanceUID,
@@ -67,6 +71,8 @@ export default class LockedCollectionsListItem extends React.Component {
       roiSortingOrder
     );
 
+    const { isSubStack, subStackRoiContours } = this._getOnStackRoiContours();
+
     this.state = {
       expanded,
       collectionVisible,
@@ -76,6 +82,8 @@ export default class LockedCollectionsListItem extends React.Component {
       roiSortingOrder,
       sortIndices,
       activeColorTemplate,
+      isSubStack,
+      subStackRoiContours,
     };
 
     this.onToggleExpandClick = this.onToggleExpandClick.bind(this);
@@ -100,6 +108,42 @@ export default class LockedCollectionsListItem extends React.Component {
       'xnatcontourroiextracted',
       this.onLoadRoiComplete
     );
+  }
+
+  _getOnStackRoiContours() {
+    const { displaySet } = this.props;
+    const ownRoiUids = this._ROIContourArray.map(roi => roi.uid);
+    let isSubStack = false;
+    const subStackRoiContours = {};
+    if (displaySet && displaySet.isSubStack) {
+      isSubStack = displaySet.isSubStack;
+      const toolStateManager = globalToolStateManager.saveToolState();
+      const keys = Object.keys(toolStateManager);
+      const imageIds = displaySet.images.map(image => image._data.url);
+      imageIds.forEach(imageId => {
+        if (keys.includes(imageId)) {
+          const toolData =
+            toolStateManager[imageId].FreehandRoi3DTool &&
+            toolStateManager[imageId].FreehandRoi3DTool.data;
+          if (!toolData) {
+            return;
+          }
+          const allRoiUids = toolData.map(contour => contour.ROIContourUid);
+          const roiUids = allRoiUids.filter(roiUid =>
+            ownRoiUids.includes(roiUid)
+          );
+          roiUids.forEach(roiUid => {
+            if (!subStackRoiContours[roiUid]) {
+              subStackRoiContours[roiUid] = 1;
+            } else {
+              subStackRoiContours[roiUid] += 1;
+            }
+          });
+        }
+      });
+    }
+
+    return { isSubStack, subStackRoiContours };
   }
 
   /**
@@ -169,7 +213,13 @@ export default class LockedCollectionsListItem extends React.Component {
       const someRoisNotLoaded = Object.values(contourRoiImportStatus).some(
         value => value === DATA_IMPORT_STATUS.NOT_IMPORTED
       );
-      this.setState({ contourRoiImportStatus, someRoisNotLoaded });
+      const { isSubStack, subStackRoiContours } = this._getOnStackRoiContours();
+      this.setState({
+        contourRoiImportStatus,
+        someRoisNotLoaded,
+        isSubStack,
+        subStackRoiContours,
+      });
     }
   }
 
@@ -240,6 +290,8 @@ export default class LockedCollectionsListItem extends React.Component {
       roiSortingOrder,
       sortIndices,
       activeColorTemplate,
+      isSubStack,
+      subStackRoiContours,
     } = this.state;
 
     const { uid: collectionUid, name: collectionName } = this._structureSet;
@@ -252,13 +304,21 @@ export default class LockedCollectionsListItem extends React.Component {
         uid,
         color,
         name,
-        polygonCount,
+        polygonCount: allPolygonCount,
         importPercent,
         loadFunc,
         stats,
       } = contourRoi;
       const importStatus = contourRoiImportStatus[uid];
       const isLoaded = importStatus === DATA_IMPORT_STATUS.IMPORTED;
+      const onStackPolygonCount =
+        subStackRoiContours[uid] !== undefined ? subStackRoiContours[uid] : 0;
+      let polygonCount = allPolygonCount;
+      let polygonCountRep = `${allPolygonCount}`;
+      if (isSubStack && allPolygonCount > 0) {
+        polygonCountRep = `${onStackPolygonCount}/${allPolygonCount}`;
+        polygonCount = onStackPolygonCount;
+      }
 
       let indexComponent = <ColoredCircle color={color} />;
       if (importStatus === DATA_IMPORT_STATUS.NOT_IMPORTED) {
@@ -304,7 +364,7 @@ export default class LockedCollectionsListItem extends React.Component {
               disabled={!isLoaded}
               title={!isLoaded ? 'ROI not loaded' : ''}
             >
-              {polygonCount}
+              {polygonCountRep}
             </button>
           </td>
           <td>

@@ -1,22 +1,5 @@
 import cornerstone from 'cornerstone-core';
-import { utils } from '@ohif/core';
-
-const { studyMetadataManager } = utils;
-
-const _getDisplaySet = ({ StudyInstanceUID, displaySetInstanceUID }) => {
-  const studies = studyMetadataManager.all();
-  const studyMetadata = studies.find(
-    study =>
-      study.getStudyInstanceUID() === StudyInstanceUID &&
-      study.displaySets.some(
-        ds => ds.displaySetInstanceUID === displaySetInstanceUID
-      )
-  );
-  const displaySet = studyMetadata.findDisplaySet(
-    displaySet => displaySet.displaySetInstanceUID === displaySetInstanceUID
-  );
-  return displaySet;
-};
+import getDisplaySetFromStudyInstanceUid from './getDisplaySetFromStudyInstanceUid';
 
 const _getPatientName = patientName => {
   if (patientName) {
@@ -31,7 +14,11 @@ const _getPatientName = patientName => {
 };
 
 export default function getSeriesInfoForImageId(viewportData) {
-  const displaySet = _getDisplaySet(viewportData);
+  const displaySet = getDisplaySetFromStudyInstanceUid(viewportData);
+
+  if (!displaySet) {
+    throw new Error('getDisplaySetFromStudyInstanceUid: no displaySet found');
+  }
 
   const { images } = displaySet;
 
@@ -75,6 +62,17 @@ export default function getSeriesInfoForImageId(viewportData) {
   }
 
   seriesInfo.sopInstanceUids = sopInstanceUids;
+
+  if (displaySet.isMultiFrame) {
+    seriesInfo.multiframeSopInstanceUid = instance.SOPInstanceUID;
+  } else if (displaySet.isSubStack) {
+    const refDisplaySet = displaySet.refDisplaySet;
+    if (refDisplaySet.isMultiFrame) {
+      const { images: refImages } = displaySet.refDisplaySet;
+      const firstRefImage = refImages[0];
+      seriesInfo.multiframeSopInstanceUid = firstRefImage._data.metadata.SOPInstanceUID;
+    }
+  }
 
   // seriesInfo = {
   //   studyInstanceUid: metaData.study.studyInstanceUid,

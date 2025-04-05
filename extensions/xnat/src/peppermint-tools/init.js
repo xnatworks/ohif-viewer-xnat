@@ -2,7 +2,7 @@ import cornerstone from 'cornerstone-core';
 import cornerstoneTools from 'cornerstone-tools';
 import xnatRoiApi from './XNATRoiApi';
 import PEPPERMINT_TOOL_NAMES from './toolNames.js';
-import { freehand3DModule, extendSegmentationModule } from './modules';
+import { freehand3DModule, extendSegmentationModule, applyXnatSegmentationModule } from './modules';
 import {
   FreehandRoi3DTool,
   FreehandRoi3DSculptorTool,
@@ -174,6 +174,7 @@ export default function init({
   const segmentationModule = cornerstoneTools.getModule('segmentation');
 
   // add custom setters & getters to the CSTools segmentation module
+  applyXnatSegmentationModule(segmentationModule);
   extendSegmentationModule(segmentationModule, config);
 
   // register the freehand3D module

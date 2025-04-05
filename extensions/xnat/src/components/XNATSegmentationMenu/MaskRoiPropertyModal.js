@@ -6,12 +6,7 @@ import RoiLabelSelect from '../../elements/RoiLabelSelect/RoiLabelSelect';
 const categories = GeneralAnatomyList.SegmentationCodes.Category;
 
 function MaskRoiPropertyModal(props) {
-  const {
-    metadata,
-    segmentIndex,
-    onUpdateProperty,
-    onClose,
-  } = props;
+  const { metadata, segmentIndex, onUpdateProperty, onClose } = props;
 
   const [state, setState] = useState({
     segmentLabel: metadata.SegmentLabel,
@@ -24,7 +19,7 @@ function MaskRoiPropertyModal(props) {
     validLabel: true,
   });
 
-  const onCategoryChange = (evt) => {
+  const onCategoryChange = evt => {
     const categoryUID = evt.target.value;
 
     const category = categories.find(
@@ -44,11 +39,11 @@ function MaskRoiPropertyModal(props) {
       ...state,
       categoryUID,
       typeUID,
-      modifierUID
+      modifierUID,
     });
-  }
+  };
 
-  const onTypeChange = (evt) => {
+  const onTypeChange = evt => {
     const { categoryUID } = state;
     const typeUID = evt.target.value;
 
@@ -68,26 +63,26 @@ function MaskRoiPropertyModal(props) {
     setState({
       ...state,
       typeUID,
-      modifierUID
+      modifierUID,
     });
-  }
+  };
 
-  const onModifierChange = (evt) => {
+  const onModifierChange = evt => {
     const modifierUID = evt.target.value;
 
     setState({
       ...state,
-      modifierUID
+      modifierUID,
     });
-  }
+  };
 
   const onChangeSegmentLabel = label => {
     setState({
       ...state,
       segmentLabel: label,
-      validLabel: label.length > 0 && label.length <= 64
+      validLabel: label.length > 0 && label.length <= 64,
     });
-  }
+  };
 
   const categorySelect = (
     <div style={{ marginBottom: 10 }}>
@@ -109,6 +104,12 @@ function MaskRoiPropertyModal(props) {
   const category = categories.find(
     categoriesI => categoriesI.CodeValue === state.categoryUID
   );
+
+  if (!category) {
+    onClose();
+    return null;
+  }
+
   const types = category.Type;
 
   const typeSelect = (

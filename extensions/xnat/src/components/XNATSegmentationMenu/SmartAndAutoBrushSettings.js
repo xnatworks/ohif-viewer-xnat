@@ -5,7 +5,6 @@ import { Range, SelectTree } from '@ohif/ui';
 import '../XNATRoiPanel.styl';
 
 const segmentationModule = cornerstoneTools.getModule('segmentation');
-const { configuration } = segmentationModule;
 const minGateSeparation = 1;
 const maxGateSeparation = 100;
 
@@ -17,6 +16,7 @@ export default class SmartAndAutoBrushSettings extends React.Component {
   constructor(props = {}) {
     super(props);
 
+    const { configuration } = segmentationModule;
     const customGateRange = segmentationModule.getters.customGateRange();
 
     this.state = {
@@ -43,6 +43,7 @@ export default class SmartAndAutoBrushSettings extends React.Component {
    * @returns {type}     description
    */
   onGateChange(evt) {
+    const { configuration } = segmentationModule;
     const val = evt.target.value;
 
     this.saveGateSettings('activeGate', val);
@@ -139,6 +140,7 @@ export default class SmartAndAutoBrushSettings extends React.Component {
    * @returns {null}
    */
   onHoleFillChange(evt) {
+    const { configuration } = segmentationModule;
     const val = Number(evt.target.value);
 
     this.setState({ holeFill: val });
@@ -153,6 +155,7 @@ export default class SmartAndAutoBrushSettings extends React.Component {
    * @returns {null}
    */
   onStrayRemoveChange(evt) {
+    const { configuration } = segmentationModule;
     const val = Number(evt.target.value);
 
     this.setState({ strayRemove: val });
@@ -160,6 +163,7 @@ export default class SmartAndAutoBrushSettings extends React.Component {
   }
 
   render() {
+    const { configuration } = segmentationModule;
     const holeFillRange = configuration.holeFillRange;
     const strayRemoveRange = configuration.strayRemoveRange;
 

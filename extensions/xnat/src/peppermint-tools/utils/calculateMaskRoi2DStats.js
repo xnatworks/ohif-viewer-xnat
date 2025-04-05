@@ -1,4 +1,4 @@
-import { getModule, getToolState } from 'cornerstone-tools';
+import { getModule } from 'cornerstone-tools';
 import cornerstone from 'cornerstone-core';
 
 const segmentationModule = getModule('segmentation');
@@ -15,6 +15,10 @@ const calculateMaskRoi2DStats = (element, currentImageIdIndex) => {
     element,
     activeLabelmapIndex
   );
+
+  if (!labelmap3D) {
+    return;
+  }
 
   const metadata = labelmap3D.metadata;
   const labelmap2D = labelmap3D.labelmaps2D[currentImageIdIndex];

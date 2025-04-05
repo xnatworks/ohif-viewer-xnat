@@ -30,6 +30,8 @@ export default class WorkingCollectionListItem extends React.Component {
     SeriesInstanceUID: PropTypes.any,
     onClick: PropTypes.func,
     canChangeRoiColor: PropTypes.bool,
+    isSubStack: PropTypes.bool,
+    onStackPolygonCount: PropTypes.number,
   };
 
   static defaultProps = {
@@ -41,6 +43,8 @@ export default class WorkingCollectionListItem extends React.Component {
     SeriesInstanceUID: undefined,
     onClick: undefined,
     canChangeRoiColor: true,
+    isSubStack: false,
+    onStackPolygonCount: 0,
   };
 
   constructor(props = {}) {
@@ -187,13 +191,21 @@ export default class WorkingCollectionListItem extends React.Component {
       onClick,
       activeROIContourIndex,
       canChangeRoiColor,
+      isSubStack,
+      onStackPolygonCount,
     } = this.props;
 
     const checked = activeROIContourIndex === roiContourIndex;
-    const { name, stats } = metadata;
-    const polygonCount = metadata.polygonCount;
+    const { name, stats, polygonCount: allPolygonCount } = metadata;
 
-    const { visible, color, volumeCm3 } = this.state;
+    let polygonCount = allPolygonCount;
+    let polygonCountRep = `${allPolygonCount}`;
+    if (isSubStack && allPolygonCount > 0) {
+      polygonCountRep = `${onStackPolygonCount}/${allPolygonCount}`;
+      polygonCount = onStackPolygonCount;
+    }
+
+    const { visible, volumeCm3 } = this.state;
     const showHideIcon = visible ? (
       <Icon name="eye" width="13px" height="13px" />
     ) : (
@@ -241,7 +253,7 @@ export default class WorkingCollectionListItem extends React.Component {
             style={{ cursor: 'pointer', color: 'var(--text-primary-color)' }}
             onClick={() => (polygonCount ? onClick(metadata.uid) : null)}
           >
-            {polygonCount}
+            {polygonCountRep}
           </a>
         </td>
         <td className="">

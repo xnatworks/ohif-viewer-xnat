@@ -228,6 +228,8 @@ export default class WorkingRoiCollectionList extends React.Component {
                         SeriesInstanceUID={SeriesInstanceUID}
                         onClick={onContourClick}
                         canChangeRoiColor={canChangeRoiColor}
+                        isSubStack={roiContour.isSubStack}
+                        onStackPolygonCount={roiContour.onStackPolygonCount}
                       />
                     ))}
                 </tbody>

@@ -6,12 +6,16 @@ import getCodingText from '../common/getCodingText';
 import MeasurementJumpToButton from '../MeasurementJumpToButton/MeasurementJumpToButton';
 
 const ImportedCollectionItem = props => {
-  const { measurement, onJumpToItem } = props;
+  const { measurement, onJumpToItem, imageIds } = props;
   const { metadata, internal } = measurement;
   const { uuid, name, description, codingSequence, visible, color } = metadata;
-  const { icon, displaySetInstanceUID, collectionUID } = internal;
+  const { icon, displaySetInstanceUID, collectionUID, imageId } = internal;
 
   const [isVisible, setVisible] = useState(visible);
+
+  if (!imageIds.includes(imageId)) {
+    return null;
+  }
 
   const codingText = getCodingText({
     category: codingSequence[0].CategoryCodeSequence.CodeMeaning,
@@ -90,6 +94,7 @@ const ImportedCollectionItem = props => {
 ImportedCollectionItem.propTypes = {
   measurement: PropTypes.object.isRequired,
   onJumpToItem: PropTypes.func.isRequired,
+  imageIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default ImportedCollectionItem;

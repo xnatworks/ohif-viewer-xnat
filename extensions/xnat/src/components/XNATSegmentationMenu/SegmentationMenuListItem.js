@@ -90,7 +90,10 @@ export default class SegmentationMenuListItem extends React.Component {
       showColorSelectModal,
       onDeleteClick,
       onClick,
+      findSegmentSlices,
     } = this.props;
+
+    const { segmentSlices, segmentMidSlice } = findSegmentSlices(segmentIndex);
 
     const { visible, segmentLabel, segmentColor } = this.state;
 
@@ -105,16 +108,6 @@ export default class SegmentationMenuListItem extends React.Component {
     ) : (
       <Icon name="eye-closed" />
     );
-
-    let slices = [];
-    for (const [key, value] of Object.entries(labelmap3D.labelmaps2D)) {
-      if (value.segmentsOnLabelmap.includes(segmentIndex)) {
-        slices.push(Number(key));
-      }
-    }
-    const midSlice = slices.length
-      ? slices[Math.floor(slices.length / 2)]
-      : undefined;
 
     return (
       <tr>
@@ -164,10 +157,10 @@ export default class SegmentationMenuListItem extends React.Component {
           <a
             style={{ cursor: 'pointer', color: 'white' }}
             onClick={() =>
-              midSlice !== undefined ? onClick(segmentIndex, midSlice) : null
+              segmentMidSlice !== undefined ? onClick(segmentIndex, segmentMidSlice) : null
             }
           >
-            {slices.length ? `${slices.length}` : '0'}
+            {`${segmentSlices.length}`}
           </a>
         </td>
         <td className="centered-cell">

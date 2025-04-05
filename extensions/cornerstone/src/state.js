@@ -11,8 +11,8 @@ const {
   // Windowing state
   setWindowing,
   getWindowing,
-  setDisplaySetForFirstImageId,
-  getDisplaySetForFirstImageId,
+  setDisplaySetFromImageIds,
+  getDisplaySetFromImageIds,
 } = state;
 
 export {
@@ -24,6 +24,6 @@ export {
   // Windowing state
   setWindowing,
   getWindowing,
-  setDisplaySetForFirstImageId,
-  getDisplaySetForFirstImageId,
+  setDisplaySetFromImageIds,
+  getDisplaySetFromImageIds,
 };

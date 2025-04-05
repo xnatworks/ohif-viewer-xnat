@@ -59,14 +59,14 @@ export { setWindowing, getWindowing };
 /**
  * firstImageId to displaySet map
  */
-const firstImageIdToDisplaySet = new Map();
+const imageIdsToDisplaySet = new Map();
 
-const setDisplaySetForFirstImageId = (imageId, displaySet) => {
-  firstImageIdToDisplaySet.set(imageId, displaySet);
+const setDisplaySetFromImageIds = (imageIds, displaySet) => {
+  imageIdsToDisplaySet.set(imageIds.toString(), displaySet);
 };
 
-const getDisplaySetForFirstImageId = imageId => {
-  return firstImageIdToDisplaySet.get(imageId);
+const getDisplaySetFromImageIds = imageIds => {
+  return imageIdsToDisplaySet.get(imageIds.toString());
 };
 
 const state = {
@@ -83,8 +83,8 @@ const state = {
   setWindowing,
   getWindowing,
   // FirstImageId to displaySet map
-  setDisplaySetForFirstImageId,
-  getDisplaySetForFirstImageId,
+  setDisplaySetFromImageIds,
+  getDisplaySetFromImageIds,
 };
 
 export default state;

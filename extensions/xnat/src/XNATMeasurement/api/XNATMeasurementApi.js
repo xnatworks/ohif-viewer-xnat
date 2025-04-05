@@ -43,15 +43,14 @@ class XNATMeasurementApi {
     return this._supportedToolTypes.includes(toolType);
   }
 
-  getMeasurementCollections(displaySetInstanceUID) {
+  getMeasurementCollections(seriesAttributes) {
+    const { displaySetInstanceUID } = seriesAttributes;
     let seriesCollection = this._seriesCollections.get(displaySetInstanceUID);
     if (!seriesCollection) {
-      const paras = getSeriesAttributes(displaySetInstanceUID);
-      if (!paras) {
-        return;
-      }
       seriesCollection = {
-        workingCollection: new ImageMeasurementCollection({ paras }),
+        workingCollection: new ImageMeasurementCollection({
+          paras: seriesAttributes,
+        }),
         importedCollections: [],
       };
       this._seriesCollections.set(displaySetInstanceUID, seriesCollection);
@@ -105,9 +104,8 @@ class XNATMeasurementApi {
     } = window.store.getState().viewports;
     const { displaySetInstanceUID } = viewportSpecificData[activeViewportIndex];
 
-    const seriesCollection = this.getMeasurementCollections(
-      displaySetInstanceUID
-    );
+    const seriesAttributes = getSeriesAttributes(displaySetInstanceUID);
+    const seriesCollection = this.getMeasurementCollections(seriesAttributes);
     const collection = seriesCollection.workingCollection;
     const { uuid: collectionUID } = collection.metadata;
     const { StudyInstanceUID, SeriesInstanceUID } = collection.imageReference;
@@ -120,7 +118,7 @@ class XNATMeasurementApi {
         ...imageAttributes,
         StudyInstanceUID,
         SeriesInstanceUID,
-        displaySetInstanceUID,
+        displaySetInstanceUID: seriesAttributes.displaySetInstanceUID,
       },
       viewport: assignViewportParameters({}, currentViewport),
     });
@@ -178,9 +176,8 @@ class XNATMeasurementApi {
       displaySetInstanceUID,
     } = measurementReference;
 
-    const seriesCollection = this.getMeasurementCollections(
-      displaySetInstanceUID
-    );
+    const seriesAttributes = getSeriesAttributes(displaySetInstanceUID);
+    const seriesCollection = this.getMeasurementCollections(seriesAttributes);
     const collection = seriesCollection.workingCollection;
 
     if (removeToolState) {
@@ -204,13 +201,13 @@ class XNATMeasurementApi {
   }
 
   addImportedCollection(SeriesInstanceUID, collectionLabel, collectionObject) {
-    const displaySetInstanceUID = this.getDisplaySetInstanceUID(
+    const _displaySetInstanceUID = this.getDisplaySetInstanceUID(
       SeriesInstanceUID
     );
 
-    const seriesCollection = this.getMeasurementCollections(
-      displaySetInstanceUID
-    );
+    const seriesAttributes = getSeriesAttributes(_displaySetInstanceUID);
+    const { displaySetInstanceUID } = seriesAttributes;
+    const seriesCollection = this.getMeasurementCollections(seriesAttributes);
     const { importedCollections } = seriesCollection;
     const { imageMeasurements: measurementObjects } = collectionObject;
 
@@ -272,9 +269,8 @@ class XNATMeasurementApi {
   }
 
   removeImportedCollection(collectionUuid, displaySetInstanceUID) {
-    const seriesCollection = this.getMeasurementCollections(
-      displaySetInstanceUID
-    );
+    const seriesAttributes = getSeriesAttributes(displaySetInstanceUID);
+    const seriesCollection = this.getMeasurementCollections(seriesAttributes);
     const collection = seriesCollection.importedCollections.find(
       collectionI => collectionI.metadata.uuid === collectionUuid
     );
@@ -335,9 +331,8 @@ class XNATMeasurementApi {
   }
 
   unlockImportedCollection(collectionUuid, displaySetInstanceUID) {
-    const seriesCollection = this.getMeasurementCollections(
-      displaySetInstanceUID
-    );
+    const seriesAttributes = getSeriesAttributes(displaySetInstanceUID);
+    const seriesCollection = this.getMeasurementCollections(seriesAttributes);
     const { workingCollection, importedCollections } = seriesCollection;
 
     const collectionIndex = importedCollections

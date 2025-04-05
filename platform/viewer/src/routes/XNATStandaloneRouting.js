@@ -16,7 +16,7 @@ import { getViewerSettings } from '../utils';
 const { log, metadata, utils, state } = OHIF;
 const { studyMetadataManager, metadataUtils } = utils;
 const { OHIFStudyMetadata } = metadata;
-const { setDisplaySetForFirstImageId } = state;
+const { setDisplaySetFromImageIds } = state;
 
 const VALID_BACKGROUND_MODALITIES = ['MR', 'CT'];
 const VALID_OVERLAY_MODALITIES = ['PT', 'NM', 'MR'];
@@ -782,11 +782,10 @@ function updateXnatSessionMap(studies) {
 
   studies.forEach(study => {
     study.displaySets.forEach(displaySet => {
-      let firstImageId = displaySet.images[0]._data.url;
-      if (displaySet.isMultiFrame) {
-        firstImageId = firstImageId + '?frame=0';
+      if (displaySet.isSubStack) {
+        const imageIds = displaySet.images.map(image => image._data.url);
+        setDisplaySetFromImageIds(imageIds, displaySet);
       }
-      setDisplaySetForFirstImageId(firstImageId, displaySet);
       const xnatScan = xnatScans.find(
         scan => scan.seriesInstanceUid === displaySet.SeriesInstanceUID
       );

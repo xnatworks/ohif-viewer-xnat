@@ -47,11 +47,9 @@ const _getFirstImageId = ({ StudyInstanceUID, displaySetInstanceUID }) => {
     const displaySet = studyMetadata.findDisplaySet(
       displaySet => displaySet.displaySetInstanceUID === displaySetInstanceUID
     );
-    const image = displaySet.images[0];
-    const { metadata } = image.getData();
-    let imageId = image.getImageId();
-    if (metadata.NumberOfFrames > 1 && !imageId.includes('frame=')) {
-      imageId = `${imageId}?frame=0`;
+    let imageId = displaySet.firstImageId;
+    if (displaySet.isSubStack) {
+      imageId = displaySet.refDisplaySet.firstImageId;
     }
     return imageId;
   } catch (error) {
@@ -104,6 +102,7 @@ export default class XNATSegmentationPanel extends React.Component {
     );
     this.onMaskClick = this.onMaskClick.bind(this);
     this.onShow2DStats = this.onShow2DStats.bind(this);
+    this.findSegmentSlices = this.findSegmentSlices.bind(this);
 
     const { viewports, activeIndex } = props;
     const firstImageId = _getFirstImageId(viewports[activeIndex]);
@@ -477,6 +476,50 @@ export default class XNATSegmentationPanel extends React.Component {
     this.refreshSegmentList(firstImageId);
   }
 
+  findSegmentSlices(segmentIndex) {
+    const { activeIndex, viewports } = this.props;
+    const { labelmap3D } = this.state;
+
+    const enabledElements = cornerstone.getEnabledElements();
+    const enabledElement = enabledElements[activeIndex];
+    if (!enabledElement) {
+      return { segmentSlices: [], segmentMidSlice: undefined };
+    }
+    const element = enabledElement.element;
+
+    const toolState = getToolState(element, 'stack');
+    if (!toolState) {
+      return { segmentSlices: [], segmentMidSlice: undefined };
+    }
+
+    let segmentSlices = [];
+    for (const [key, value] of Object.entries(labelmap3D.labelmaps2D)) {
+      if (value.segmentsOnLabelmap.includes(segmentIndex)) {
+        segmentSlices.push(Number(key));
+      }
+    }
+
+    const viewportData = viewports[activeIndex];
+    if (viewportData.isSubStack) {
+      const { stackData: subStackData } = viewportData;
+      const refIndices = subStackData.refIndices;
+      const mappedSegmentSlices = [];
+      segmentSlices.forEach(index => {
+        const subStackIndex = refIndices.indexOf(index);
+        if (subStackIndex >= 0) {
+          mappedSegmentSlices.push(subStackIndex);
+        }
+      });
+      segmentSlices = mappedSegmentSlices;
+    }
+
+    const segmentMidSlice = segmentSlices.length
+      ? segmentSlices[Math.floor(segmentSlices.length / 2)]
+      : undefined;
+
+    return { segmentSlices, segmentMidSlice };
+  }
+
   /**
    * onMaskClick - Jumps to the middle slice of a segment
    *
@@ -758,6 +801,7 @@ export default class XNATSegmentationPanel extends React.Component {
                     showColorSelectModal={showColorSelectModal}
                     onDeleteClick={this.onDeleteClick}
                     onMaskClick={this.onMaskClick}
+                    findSegmentSlices={this.findSegmentSlices}
                   />
                 </tbody>
               </table>
