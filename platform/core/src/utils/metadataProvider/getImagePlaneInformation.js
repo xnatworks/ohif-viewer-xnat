@@ -1,8 +1,8 @@
 import { Vector3 } from 'cornerstone-math';
 
 export default function getImagePlaneInformation(instance, frameIndex) {
-  let ImageOrientationPatient;
-  let ImagePositionPatient;
+  let ImageOrientationPatient = instance.ImageOrientationPatient;
+  let ImagePositionPatient = instance.ImagePositionPatient;
 
   const { SOPClassUID } = instance;
 
@@ -33,15 +33,15 @@ export default function getImagePlaneInformation(instance, frameIndex) {
           new Vector3(iop[3], iop[4], iop[5])
         );
 
-        let incremant;
+        let increment;
         if (SpacingBetweenSlices !== undefined) {
-          incremant = SpacingBetweenSlices;
+          increment = SpacingBetweenSlices;
         } else if (SliceThickness) {
-          incremant = SliceThickness;
+          increment = SliceThickness;
         }
 
-        if (incremant !== undefined) {
-          axisNormal.multiplyScalar(incremant);
+        if (increment !== undefined) {
+          axisNormal.multiplyScalar(increment);
         }
 
         ImageOrientationPatient = iop;
