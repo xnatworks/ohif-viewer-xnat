@@ -142,6 +142,16 @@ window.config = {
       label: 'Decrease Brush Size',
       keys: ['['],
     },
+    {
+      commandName: 'xnatIncrementActiveStack',
+      label: 'Next Stack',
+      keys: ['shift+right'],
+    },
+    {
+      commandName: 'xnatDecrementActiveStack',
+      label: 'Previous Stack',
+      keys: ['shift+left'],
+    },
   ],
   cornerstoneExtensionConfig: {},
   // Following property limits number of simultaneous series metadata requests.
