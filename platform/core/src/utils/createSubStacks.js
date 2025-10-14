@@ -190,7 +190,7 @@ const buildDimensionDataForEnhanced = refMetadata => {
     throw new Error('Invalid DimensionOrganizationSequence.');
   }
 
-  const dimensionPointers = [];
+  let dimensionPointers = [];
   DimensionIndexSequence.forEach(data => {
     if (
       !data.DimensionOrganizationUID ||
@@ -225,8 +225,8 @@ const buildDimensionDataForEnhanced = refMetadata => {
     );
   }
 
-  const dimensionIndices = [];
-  const dimensionValues = [];
+  let dimensionIndices = [];
+  let dimensionValues = [];
 
   // Look for pointers in the per-frame functional group.
   PerFrameFunctionalGroupsSequence.forEach((frameMetadata, index) => {
@@ -265,6 +265,74 @@ const buildDimensionDataForEnhanced = refMetadata => {
 
   if (dimensionIndices.length !== NumberOfFrames) {
     throw new Error('Some frames have missing dimension indices.');
+  }
+
+  // Generate dimension indices (without relying on the values from the metadata)
+  const numDimensions = dimensionPointers.length;
+  const computedDimensionIndices = [dimensionPointers.map(item => 1)];
+  let indexChangeFrequency = dimensionPointers.map(item => 1);
+  const dimensionUniqueValues = Object.assign(
+    {},
+    dimensionValues[0].map(value => [value])
+  );
+  for (let i = 1; i < NumberOfFrames; i++) {
+    const dvs_prev = dimensionValues[i - 1];
+    const dvs_curr = dimensionValues[i];
+    const dis_prev = computedDimensionIndices[i - 1];
+    const dis_curr = [];
+    for (let j = 0; j < numDimensions; j++) {
+      const indexValue_prev = dis_prev[j];
+      const value_curr = dvs_curr[j];
+      if (dvs_curr[j] === dvs_prev[j]) {
+        dis_curr.push(indexValue_prev);
+      } else {
+        // dis_curr.push(indexValue_prev + 1);
+        indexChangeFrequency[j]++;
+        if (!dimensionUniqueValues[j].includes(value_curr)) {
+          dis_curr.push(indexValue_prev + 1);
+          dimensionUniqueValues[j].push(value_curr);
+        } else {
+          dis_curr.push(dimensionUniqueValues[j].indexOf(value_curr) + 1);
+        }
+      }
+    }
+    computedDimensionIndices.push(dis_curr);
+  }
+
+  const validDimensionIndices = dimensionIndices.every((d, i) =>
+    d.every((e, j) => e === computedDimensionIndices[i][j])
+  );
+  if (!validDimensionIndices) {
+    dimensionIndices = computedDimensionIndices;
+  }
+  // Sort slower to fastest
+  indexChangeFrequency = indexChangeFrequency.map((value, index) => ({
+    index,
+    value,
+  }));
+  indexChangeFrequency.sort((a, b) => a.value - b.value);
+  const isSorted = indexChangeFrequency.every((d, i) => d.index === i);
+  if (!isSorted) {
+    const sortedDimensionIndices = new Array(NumberOfFrames)
+      .fill(0)
+      .map(() => new Array(numDimensions).fill(0));
+    const sortedDimensionValues = new Array(NumberOfFrames)
+      .fill(0)
+      .map(() => new Array(numDimensions).fill(0));
+    const sortedDimensionPointers = [];
+    for (let i = 0; i < indexChangeFrequency.length; i++) {
+      const index = indexChangeFrequency[i].index;
+      sortedDimensionPointers[i] = dimensionPointers[index];
+
+      for (let j = 0; j < NumberOfFrames; j++) {
+        sortedDimensionIndices[j][i] = dimensionIndices[j][index];
+        sortedDimensionValues[j][i] = dimensionValues[j][index];
+      }
+    }
+
+    dimensionIndices = sortedDimensionIndices;
+    dimensionValues = sortedDimensionValues;
+    dimensionPointers = sortedDimensionPointers;
   }
 
   return {

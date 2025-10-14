@@ -72,7 +72,7 @@ const getSeriesAttributes = displaySetInstanceUID => {
 
     seriesAttributes = {
       PatientID,
-      PatientName,
+      PatientName: _getPatientName(PatientName),
       PatientBirthDate,
       StudyInstanceUID,
       SeriesInstanceUID,
@@ -91,6 +91,18 @@ const getSeriesAttributes = displaySetInstanceUID => {
 const _getRootImageId = imageId => {
   const splitImageId = imageId.split('?frame=');
   return splitImageId[0];
+};
+
+const _getPatientName = patientName => {
+  if (patientName) {
+    if (patientName.hasOwnProperty('Alphabetic')) {
+      return patientName.Alphabetic;
+    } else {
+      return patientName;
+    }
+  } else {
+    return '';
+  }
 };
 
 export default getSeriesAttributes;

@@ -1,3 +1,4 @@
+import { redux } from '@ohif/core';
 import checkAndSetPermissions from './utils/checkAndSetPermissions';
 import sessionMap from './utils/sessionMap.js';
 import csTools from 'cornerstone-tools';
@@ -7,7 +8,10 @@ import queryRoiColorList from './utils/IO/queryRoiColorList';
 import queryRoiPresets from './utils/IO/queryRoiPresets';
 import { XNATStudyLoadingListener } from './utils/StudyLoadingListener/XNATStudyLoadingListener';
 import { onKeyDownEvent, KEY_COMMANDS } from './utils';
-import { triggerSegmentCompletedEvent, PEPPERMINT_TOOL_NAMES } from './peppermint-tools';
+import {
+  triggerSegmentCompletedEvent,
+  PEPPERMINT_TOOL_NAMES,
+} from './peppermint-tools';
 
 const refreshCornerstoneViewports = () => {
   cornerstone.getEnabledElements().forEach(enabledElement => {
@@ -67,6 +71,68 @@ const actions = {
 
     triggerSegmentCompletedEvent(element, 'MaskUndoRedo');
     refreshCornerstoneViewports();
+  },
+  updateActiveStack: ({ viewports, direction }) => {
+    const {
+      viewportSpecificData: viewportSpecificDataGroup,
+      activeViewportIndex,
+    } = viewports;
+    if (
+      !viewportSpecificDataGroup ||
+      !viewportSpecificDataGroup[activeViewportIndex]
+    ) {
+      return;
+    }
+
+    const viewportSpecificData = viewportSpecificDataGroup[activeViewportIndex];
+    if (!viewportSpecificData) {
+      return;
+    }
+
+    let stackData;
+    if (
+      viewportSpecificData.isValidMultiStack ||
+      viewportSpecificData.isSubStack
+    ) {
+      stackData = viewportSpecificData.getSubStackGroupData();
+    }
+    if (!stackData) {
+      return;
+    }
+
+    const { viewportActiveStackInfo, stackInfoList } = stackData;
+    const currentStackInfo = viewportActiveStackInfo[activeViewportIndex];
+
+    const currentStackIndex = stackInfoList.findIndex(
+      stack => stack.value === currentStackInfo.value
+    );
+    if (currentStackIndex === -1) {
+      return;
+    }
+
+    const maxIndex = stackInfoList.length - 1;
+    let newIndex = currentStackIndex + direction;
+    newIndex = newIndex > maxIndex ? 0 : newIndex;
+    newIndex = newIndex < 0 ? maxIndex : newIndex;
+
+    const newStackInfo = stackInfoList[newIndex];
+    if (!newStackInfo) {
+      return;
+    }
+    if (newStackInfo.value === currentStackInfo.value) {
+      return;
+    }
+
+    stackData.updateViewportActiveStackInfo({
+      viewportIndex: activeViewportIndex,
+      displaySetInstanceUID: newStackInfo.value,
+    });
+
+    const { setActiveViewportSpecificData } = redux.actions;
+
+    window.store.dispatch(
+      setActiveViewportSpecificData(newStackInfo.displaySet)
+    );
   },
 };
 
@@ -237,6 +303,16 @@ const definitions = {
     storeContexts: [],
     options: {},
     context: 'VIEWER',
+  },
+  xnatIncrementActiveStack: {
+    commandFn: actions.updateActiveStack,
+    storeContexts: ['viewports'],
+    options: { direction: 1 },
+  },
+  xnatDecrementActiveStack: {
+    commandFn: actions.updateActiveStack,
+    storeContexts: ['viewports'],
+    options: { direction: -1 },
   },
 };
 

@@ -26,7 +26,7 @@ const _map = {
     MEAS: [],
   },
   viewerSettings: {
-    multistack: false,
+    multistack: true,
   },
 };
 
