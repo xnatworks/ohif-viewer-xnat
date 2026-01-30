@@ -524,11 +524,22 @@ function insertPixelDataPlanar(
     let imageId;
     let SourceImageSequence;
 
-    if (multiframe.SourceImageSequence) {
-      SourceImageSequence = multiframe.SourceImageSequence[i];
-    } else {
+    /*
+    multiframe.SourceImageSequence does not guarantee the order of the frames
+     to match the order of the SEG frames. It is necessary to match the frames
+     based on the ImagePositionPatient attribute.
+    PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence does
+     usually contain the frames in the correct order, especially
+     if SpatialLocationsPreserved=YES.
+    */
+    if (
+      PerFrameFunctionalGroups.DerivationImageSequence &&
+      PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence
+    ) {
       SourceImageSequence =
         PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence;
+    } else if (multiframe.SourceImageSequence) {
+      SourceImageSequence = multiframe.SourceImageSequence[i];
     }
 
     if (!SourceImageSequence) {
@@ -1059,11 +1070,14 @@ function insertPixelDataPerpendicular(
     let imageId;
     let SourceImageSequence;
 
-    if (multiframe.SourceImageSequence) {
-      SourceImageSequence = multiframe.SourceImageSequence[i];
-    } else {
+    if (
+      PerFrameFunctionalGroups.DerivationImageSequence &&
+      PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence
+    ) {
       SourceImageSequence =
         PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence;
+    } else if (multiframe.SourceImageSequence) {
+      SourceImageSequence = multiframe.SourceImageSequence[i];
     }
 
     if (!SourceImageSequence) {
@@ -1449,11 +1463,14 @@ function checkSEGsOverlapping(
 
     let SourceImageSequence;
 
-    if (multiframe.SourceImageSequence) {
-      SourceImageSequence = multiframe.SourceImageSequence[i];
-    } else {
+    if (
+      PerFrameFunctionalGroups.DerivationImageSequence &&
+      PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence
+    ) {
       SourceImageSequence =
         PerFrameFunctionalGroups.DerivationImageSequence.SourceImageSequence;
+    } else if (multiframe.SourceImageSequence) {
+      SourceImageSequence = multiframe.SourceImageSequence[i];
     }
 
     if (!SourceImageSequence) {
